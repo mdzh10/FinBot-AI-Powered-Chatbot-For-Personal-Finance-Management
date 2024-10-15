@@ -49,3 +49,9 @@ app.*.map.json
 /frontend/pubspec.lock
 /backend/__pycache__
 
+frontend/doc/api/
+/frontend/ios/Flutter/.last_build_id
+/frontend/.flutter-plugins
+/frontend/.flutter-plugins-dependencies
+/frontend/.pub-cache/
+frontend/.pub/

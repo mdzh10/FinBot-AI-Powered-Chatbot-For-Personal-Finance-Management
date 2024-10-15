@@ -46,6 +46,6 @@ app.*.map.json
 /frontend/ios/Flutter/Generated.xcconfig/
 /frontend/.idea
 /frontend/.dart_tool/
-/frontend/pubspec.lock/
+/frontend/pubspec.lock
 /backend/__pycache__
 

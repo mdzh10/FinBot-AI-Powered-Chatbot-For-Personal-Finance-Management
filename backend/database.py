@@ -19,4 +19,5 @@ def get_db():
         db.close()
 
 # Ensure models are created in the database
-Base.metadata.create_all(bind=engine)
+def create_tables():
+    Base.metadata.create_all(bind=engine)

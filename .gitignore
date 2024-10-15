@@ -42,6 +42,8 @@ app.*.map.json
 /frontend/android/app/profile
 /frontend/android/app/release
 /frontend/build/
+/frontend/ios/Flutter/flutter_export_environment.sh/
+/frontend/ios/Flutter/Generated.xcconfig/
 /frontend/.idea
 /frontend/.dart_tool/
 /frontend/pubspec.lock/

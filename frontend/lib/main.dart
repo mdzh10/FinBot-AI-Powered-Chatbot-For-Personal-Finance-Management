@@ -31,17 +31,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: Column(
-        children: [
-          Container(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text("Test "),
-            )
-          ),
-          Container(child: const MyHomePage(title: 'Flutter Demo Home Page')),
-        ],
-      ),
+      home: Container(child: const MyHomePage(title: 'Flutter Demo Home Page')),
     );
   }
 }

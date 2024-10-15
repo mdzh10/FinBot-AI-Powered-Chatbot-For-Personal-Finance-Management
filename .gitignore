@@ -41,4 +41,9 @@ app.*.map.json
 /frontend/android/app/debug
 /frontend/android/app/profile
 /frontend/android/app/release
+/frontend/build
+/frontend/.idea
+/frontend/.dart_tool
+/frontend/pubspec.lock
 /backend/__pycache__
+

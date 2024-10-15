@@ -4,7 +4,7 @@
             "outputFile": "com.example.finbot.app-mergeDebugResources-24:/values-night-v8/values-night-v8.xml",
             "map": [
                 {
-                    "source": "/home/zubair/Rifat/Software Engineering/FinBot-AI-Powered-Chatbot-For-Personal-Finance-Management/android/app/src/main/res/values-night/styles.xml",
+                    "source": "/home/zubair/Rifat/Software Engineering/FinBot-AI-Powered-Chatbot-For-Personal-Finance-Management/frontend/android/app/src/main/res/values-night/styles.xml",
                     "from": {
                         "startLines": "3,14",
                         "startColumns": "4,4",

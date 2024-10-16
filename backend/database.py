@@ -20,4 +20,6 @@ def get_db():
 
 # Ensure models are created in the database
 def create_tables():
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)  # This should create all tables based on models
+    print("Tables created successfully.")  # Add this for debugging
+

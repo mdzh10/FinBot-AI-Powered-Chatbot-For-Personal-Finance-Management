@@ -3,8 +3,9 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import null
 from sqlalchemy.orm import Session
-from database import get_db  # Now importing from database.py
+from database import get_db
 from models import User
 
 # Add your generated SECRET_KEY here
@@ -34,6 +35,8 @@ router = APIRouter()
 class UserCreate(BaseModel):
     email: str
     password: str
+    username: str  # New field
+    phone_number: str  # New field
 
 class UserLogin(BaseModel):
     email: str
@@ -46,18 +49,31 @@ async def sign_up(user: UserCreate, db: Session = Depends(get_db)):
     if db_user:
         return {
             "isSuccess": False,
-            "msg": "Email already registered"
+            "msg": "Email already registered",
+            "user_id": null,
+            "email": null,
+            "username": null,
+            "phone_number": null
         }
     
     hashed_password = get_password_hash(user.password)
-    new_user = User(email=user.email, password_hash=hashed_password)
+    new_user = User(
+        email=user.email,
+        password_hash=hashed_password,
+        username=user.username,  # Set the username
+        phone_number=user.phone_number  # Set the phone number
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
     return {
         "isSuccess": True,
-        "msg": "User registered successfully!"
+        "msg": "User registered successfully!",
+        "user_id": new_user.user_id,
+        "email": new_user.email,
+        "username": new_user.username,
+        "phone_number": new_user.phone_number
     }
 
 
@@ -68,13 +84,25 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
     if not db_user:
         return {
             "isSuccess": False,
-            "msg": "Email not found"
+            "msg": "Email not found",
+            "access_token": null,
+            "token_type": null,
+            "user_id": null,
+            "email": null,
+            "username": null,  # Include username in response
+            "phone_number": null
         }
     
     if not verify_password(user.password, db_user.password_hash):
         return {
             "isSuccess": False,
-            "msg": "Invalid credentials"
+            "msg": "Invalid credentials",
+            "access_token": null,
+            "token_type": null,
+            "user_id": null,
+            "email": null,
+            "username": null,  # Include username in response
+            "phone_number": null
         }
     
     access_token = create_access_token(data={"sub": db_user.email})
@@ -82,6 +110,9 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
         "isSuccess": True,
         "msg": "Login successful",
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "user_id": db_user.user_id,
+        "email": db_user.email,
+        "username": db_user.username,  # Include username in response
+        "phone_number": db_user.phone_number  # Include phone number in response
     }
-

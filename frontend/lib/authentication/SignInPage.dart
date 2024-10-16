@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'package:finbot/authentication/Register.dart';
-import 'package:finbot/screens/onboard/onboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import '../bloc/cubit/app_cubit.dart';
 import '../models/login_model.dart';
+import '../screens/main.screen.dart';
 import '../widgets/buttons/button.dart';
 import '../widgets/buttons/my_text_button.dart';
 import '../widgets/constraints.dart';
+import '../widgets/my_passwordfield.dart';
 
 class SigninPage extends StatefulWidget {
   @override
@@ -18,6 +19,7 @@ class SigninPage extends StatefulWidget {
 class _SigninPageState extends State<SigninPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool passwordVisibility = true;
 
   bool _isLoading = false;
   String? _message;
@@ -28,7 +30,7 @@ class _SigninPageState extends State<SigninPage> {
       _message = null;
     });
 
-    const url = 'http://192.168.1.34:8000/auth/login';  // Replace with your deployed API URL
+    const url = 'http://192.168.1.33:8000/auth/login';  // Replace with your deployed API URL
 
     try {
       final response = await http.post(
@@ -57,10 +59,18 @@ class _SigninPageState extends State<SigninPage> {
             return AlertDialog(
               title: _isLoading
                   ? Center(child: CircularProgressIndicator())
-                  : Center(
-                child: loginResponse.isSuccess
-                    ? Icon(Icons.check_circle_outline, color: Colors.green, size: 40)
-                    : Icon(Icons.close, color: Colors.redAccent, size: 40),
+                  : Row(
+                children: [
+                  loginResponse.isSuccess
+                      ? Icon(Icons.check_circle_outline, color: Colors.green, size: 40)
+                      : Icon(Icons.close, color: Colors.redAccent, size: 40),
+
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
+                        child: Text(loginResponse.isSuccess ? "Success" : "Error",
+                          style: TextStyle(color: loginResponse.isSuccess ? Colors.green : Colors.redAccent),),
+                      )
+                ],
               ),
               content: Text(loginResponse.msg, style: TextStyle(fontSize: 20)),
               actions: <Widget>[
@@ -75,7 +85,7 @@ class _SigninPageState extends State<SigninPage> {
                     });
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => OnboardScreen()), // need to change
+                      MaterialPageRoute(builder: (context) => MainScreen()), // need to change
                     );
                   },
                   size: AppButtonSize.large,
@@ -168,36 +178,15 @@ class _SigninPageState extends State<SigninPage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: TextField(
+                  child: MyPasswordField(
                     controller: _passwordController,
-                    style: aBodyText.copyWith(color: Colors.white),
-                    obscureText: true,
-                    keyboardType: TextInputType.text,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      contentPadding: EdgeInsets.all(20),
-                      hintText: "Password",
-                      suffixIcon: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Icon(Icons.visibility, color: Colors.grey),
-                      ),
-                      hintStyle: aBodyText,
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.grey,
-                          width: 1.0,
-                        ),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.white,
-                          width: 1.0,
-                        ),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                  ),
+                    isPasswordVisible: passwordVisibility,
+                    onTap: () {
+                      setState(() {
+                        passwordVisibility = !passwordVisibility;
+                      });
+                    },
+                  )
                 ),
                 SizedBox(height: 230),
                 Row(

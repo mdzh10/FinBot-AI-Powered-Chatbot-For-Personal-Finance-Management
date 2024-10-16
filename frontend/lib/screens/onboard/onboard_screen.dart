@@ -22,6 +22,9 @@ class OnboardScreen extends StatelessWidget {
           // ProfileWidget(onGetStarted: (){
           //   _pageController.jumpToPage(2);
           // },),
+          CurrencyPicWidget(onGetStarted: (){
+            _pageController.jumpToPage(2);
+          },),
           SignUpOrRegister()
         ],
       ),

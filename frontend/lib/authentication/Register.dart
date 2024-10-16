@@ -34,7 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _message = null;
     });
 
-    const url = 'http://192.168.1.34:8000/auth/signup';
+    const url = 'http://192.168.1.33:8000/auth/signup';
 
     try {
       print("Tapped 1");
@@ -69,9 +69,21 @@ class _RegisterPageState extends State<RegisterPage> {
         barrierDismissible: false,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: signupResponse.isSuccess
-                ? Center(child: Icon(Icons.check_circle_outline, color: Colors.green, size: 40))
-                : Center(child: Icon(Icons.close, color: Colors.redAccent, size: 40)),
+            title: _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : Row(
+              children: [
+                signupResponse.isSuccess
+                    ? Icon(Icons.check_circle_outline, color: Colors.green, size: 40)
+                    : Icon(Icons.close, color: Colors.redAccent, size: 40),
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
+                  child: Text(signupResponse.isSuccess ? "Success" : "Error",
+                    style: TextStyle(color: signupResponse.isSuccess ? Colors.green : Colors.redAccent),),
+                )
+              ],
+            ),
             content: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,

@@ -24,7 +24,7 @@ class SignUpOrRegister extends StatelessWidget {
                         child: Container(
                           width: MediaQuery.of(context).size.width * 0.8,
                           child: Image.asset(
-                            'assets/images/get-started.jpg',
+                            'assets/images/get_started.gif',
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -32,7 +32,7 @@ class SignUpOrRegister extends StatelessWidget {
                     ),
                     SizedBox(height: 50),
                     Text(
-                      "Enterprise team \n collaboration.",
+                      "FinBot",
                       style: aHeadLine,
                       textAlign: TextAlign.center,
                     ),
@@ -40,7 +40,7 @@ class SignUpOrRegister extends StatelessWidget {
                     Container(
                       width: MediaQuery.of(context).size.width * 0.8,
                       child: Text(
-                        "Bring together your files,your tools,projects and people. Including a new mobile and desktop  application.",
+                        "Master your finances with FinBot—your AI-powered assistant that tracks spending, categorizes receipts, and offers personalized insights!",
                         style: aBodyText,
                         textAlign: TextAlign.center,
                       ),

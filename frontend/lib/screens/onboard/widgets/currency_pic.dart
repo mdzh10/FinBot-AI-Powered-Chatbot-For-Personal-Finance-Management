@@ -5,8 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../bloc/cubit/app_cubit.dart';
 
 class CurrencyPicWidget extends StatefulWidget {
-  const CurrencyPicWidget({super.key});
-
+  final VoidCallback onGetStarted;
+  const CurrencyPicWidget({super.key, required this.onGetStarted});
   @override
   State<StatefulWidget> createState() =>_CurrencyPicWidget();
 
@@ -121,7 +121,10 @@ class _CurrencyPicWidget extends State<CurrencyPicWidget>{
           if(_currency == null) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select currency")));
           } else {
-            cubit.updateCurrency(_currency);
+            cubit.updateCurrency(_currency).then((value)
+            {
+              widget.onGetStarted();
+            });
             // resetDatabase();
           }
         },

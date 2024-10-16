@@ -4,9 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../bloc/cubit/app_cubit.dart';
-import 'accounts/accounts.screen.dart';
-import 'categories/categories.screen.dart';
-import 'home/home.screen.dart';
 import 'onboard/onboard_screen.dart';
 
 class MainScreen extends StatefulWidget{

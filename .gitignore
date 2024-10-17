@@ -47,7 +47,8 @@ app.*.map.json
 /frontend/.idea
 /frontend/.dart_tool/
 /frontend/pubspec.lock
-/backend/__pycache__
+*__pycache__*
+*.pyc
 
 frontend/doc/api/
 /frontend/ios/Flutter/.last_build_id

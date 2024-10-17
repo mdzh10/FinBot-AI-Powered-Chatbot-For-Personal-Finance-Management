@@ -22,4 +22,3 @@ def get_db():
 def create_tables():
     Base.metadata.create_all(bind=engine)  # This should create all tables based on models
     print("Tables created successfully.")  # Add this for debugging
-

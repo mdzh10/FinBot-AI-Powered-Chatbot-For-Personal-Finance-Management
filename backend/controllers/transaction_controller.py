@@ -8,7 +8,7 @@ from typing import List
 router = APIRouter()
 
 @router.get("/{user_id}", response_model=List[TransactionResponse])
-async def get_transactions(user_id: int = Query(...), db: Session = Depends(get_db)):
+async def get_transactions(user_id: int, db: Session = Depends(get_db)):
     # Fetch transactions using the service layer
     transactions = await get_all_transactions(db, user_id)
 

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from controllers.authentication_controller import router as auth_router
 from controllers.dashboard_controller import router as dashboard_router
+from controllers.transaction_controller import router as txn_router
 from db.database import database, create_tables
 
 app = FastAPI()
@@ -17,6 +18,7 @@ app.add_middleware(
 # Include authentication router
 app.include_router(auth_router, prefix="/auth")
 app.include_router(dashboard_router, prefix="/dashboard")
+app.include_router(txn_router, prefix="/transaction")
 
 @app.on_event("startup")
 async def startup():

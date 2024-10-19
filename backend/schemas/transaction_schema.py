@@ -12,6 +12,8 @@ class TransactionCreate(BaseModel):
     transaction_date: datetime
 
 class TransactionResponse(BaseModel):
+    isSuccess: bool = True
+    msg: str = "transaction created successfully"
     id: int
     user_id: int
     account_id: int

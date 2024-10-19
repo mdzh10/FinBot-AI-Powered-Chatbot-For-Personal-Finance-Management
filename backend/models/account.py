@@ -14,8 +14,7 @@ class Account(Base):
     account_type = Column(Enum(AccountType), nullable=False)  # cash or bank
     bank_name = Column(String, nullable=True)  # Only applicable for bank accounts
     account_name = Column(String, nullable=False)  # e.g., 'John Doe Checking'
-    account_number = Column(String, nullable=True)  # Bank account number
-    routing_number = Column(String, nullable=True)  # Routing number for bank accounts
+    account_number = Column(Integer, nullable=True)  # Bank account number
     balance = Column(Float, default=0.0)  # Current balance of the account
 
     def __repr__(self):

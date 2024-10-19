@@ -1,10 +1,9 @@
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from models.user import User
-from views.authentication_view import user_register_response, error_response, success_login_response
+from schemas.authentication_schema import UserResponse, LoginResponse, ErrorResponse
 
 # Add your generated SECRET_KEY here
 SECRET_KEY = "d9b1f8e0e2a3a9b2a45a0d5fb53d6ea6a1cdbb627ff5aa3a7091f5c8dfc8c3d3"
@@ -29,7 +28,7 @@ def create_access_token(data: dict):
 async def handle_sign_up(user, db: Session):
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
-        return error_response(msg="Email already registered")
+        return ErrorResponse(msg="Email already registered")
     
     hashed_password = get_password_hash(user.password)
     new_user = User(
@@ -42,15 +41,27 @@ async def handle_sign_up(user, db: Session):
     db.commit()
     db.refresh(new_user)
     
-    return user_register_response(new_user, msg="User registered successfully!")
+    return UserResponse(
+        user_id=new_user.user_id,
+        email=new_user.email,
+        username=new_user.username,
+        phone_number=new_user.phone_number,
+        msg="User registered successfully!"
+    )
 
 async def handle_login(user, db: Session):
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user:
-        return error_response(msg="Email not found")
+        return ErrorResponse(msg="Email not found")
     
     if not verify_password(user.password, db_user.password_hash):
-        return error_response(msg="Invalid credentials")
+        return ErrorResponse(msg="Invalid credentials")
     
     access_token = create_access_token(data={"sub": db_user.email})
-    return success_login_response(db_user, access_token)
+    return LoginResponse(
+        access_token=access_token,
+        user_id=db_user.user_id,
+        email=db_user.email,
+        username=db_user.username,
+        phone_number=db_user.phone_number
+    )

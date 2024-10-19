@@ -11,16 +11,16 @@ class AccountCreate(BaseModel):
     account_type: AccountTypeEnum
     bank_name: Optional[str] = None  # Applicable for bank accounts
     account_name: str
-    account_number: Optional[str] = None  # Bank account number
-    routing_number: Optional[str] = None  # Bank routing number
-    balance: Optional[float] = 0.0  # Initial balance
+    account_number: int
+    balance: int
 
 class AccountResponse(BaseModel):
+    isSuccess: bool = True
+    msg: str = "account created successful"
     id: int
     user_id: int
     account_type: AccountTypeEnum
     bank_name: Optional[str]
     account_name: str
-    account_number: Optional[str]
-    routing_number: Optional[str]
+    account_number: int
     balance: float

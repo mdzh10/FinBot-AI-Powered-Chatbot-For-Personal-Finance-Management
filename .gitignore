@@ -51,6 +51,7 @@ app.*.map.json
 *__pycache__*
 *.pyc
 
+*.env
 frontend/doc/api/
 /frontend/ios/Flutter/.last_build_id
 /frontend/.flutter-plugins

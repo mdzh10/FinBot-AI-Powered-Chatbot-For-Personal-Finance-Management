@@ -5,7 +5,7 @@ from services.authentication_service import (
     handle_sign_up,
     handle_login
 )
-from db.database import get_db
+from config.db.database import get_db
 
 router = APIRouter()
 

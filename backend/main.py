@@ -4,7 +4,8 @@ from controllers.authentication_controller import router as auth_router
 from controllers.dashboard_controller import router as dashboard_router
 from controllers.transaction_controller import router as txn_router
 from controllers.account_controller import router as acc_router
-from db.database import database, create_tables
+from controllers.receipt_controller import router as receipt_router
+from config.db.database import database, create_tables
 
 app = FastAPI()
 # Add the CORS middleware
@@ -21,6 +22,7 @@ app.include_router(auth_router, prefix="/auth")
 app.include_router(dashboard_router, prefix="/dashboard")
 app.include_router(txn_router, prefix="/transaction")
 app.include_router(acc_router, prefix="/account")
+app.include_router(receipt_router, prefix="/receipt")
 
 @app.on_event("startup")
 async def startup():

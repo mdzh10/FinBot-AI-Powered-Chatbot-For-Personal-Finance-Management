@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from db.database import get_db
+from config.db.database import get_db
 from services.transaction_service import get_all_transactions
 from schemas.transaction_schema import TransactionResponse
 from typing import List

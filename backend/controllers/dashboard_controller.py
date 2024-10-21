@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from services.dashboard_service import calculate_total_balance, get_debits_credits_in_date_range
-from db.database import get_db
+from config.db.database import get_db
 from schemas.dashboard_schema import DashboardResponse
 from datetime import datetime
 

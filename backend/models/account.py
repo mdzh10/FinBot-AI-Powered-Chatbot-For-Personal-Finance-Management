@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, Enum
-from db.database import Base
+from config.db.database import Base
 import enum
 
 class AccountType(enum.Enum):

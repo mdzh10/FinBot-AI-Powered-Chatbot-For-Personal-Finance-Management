@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Float, String, Enum, ForeignKey, DateTime
 from datetime import datetime
-from db.database import Base
+from config.db.database import Base
 import enum
 
 class TransactionType(enum.Enum):

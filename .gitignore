@@ -57,3 +57,5 @@ frontend/doc/api/
 /frontend/.flutter-plugins-dependencies
 /frontend/.pub-cache/
 frontend/.pub/
+
+*.env

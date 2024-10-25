@@ -15,4 +15,4 @@ class Notification(Base):
     updated_at=Column(DateTime, default=DateTime.utcnow, onupdate=DateTime.utcnow, nullable=False)
 
     def _repr_(self):
-        print f"<Notification(notification_id={self.notification_id},goal_id={self.goal_id},notification_message={self.notification_message})>"
+        return f"<Notification(notification_id={self.notification_id},goal_id={self.goal_id},notification_message={self.notification_message})>"

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from models.transaction import Transaction, TransactionType
 from schemas.transaction_schema import TransactionResponse,TransactionCreate
 from typing import List
+from fastapi import HTTPException
 
 async def get_all_transactions(db: Session, user_id: int) -> List[TransactionResponse]:
     # Fetch all transactions for the given user
@@ -45,3 +46,15 @@ async def add_transaction(db: Session, transaction: TransactionCreate):
     db.commit()
     db.refresh(new_transaction)
     return new_transaction
+
+async def update_transaction(db: Session,transaction_id: int, transaction: TransactionCreate):
+    existing_transaction=db.query(Transaction).filter(Transaction.id==transaction_id).first()
+    if not existing_transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    existing_transaction.item_name = transaction.item_name
+    existing_transaction.quantity = transaction.quantity
+    existing_transaction.amount = transaction.amount
+    existing_transaction.transaction_type = transaction.transaction_type
+    db.commit()
+    db.refresh(existing_transaction)
+    return existing_transaction

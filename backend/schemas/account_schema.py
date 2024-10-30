@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 from enum import Enum
 
 class AccountTypeEnum(str, Enum):
@@ -12,15 +12,20 @@ class AccountCreate(BaseModel):
     bank_name: Optional[str] = None  # Applicable for bank accounts
     account_name: str
     account_number: int
+    credit: int
+    debit: int
     balance: int
+
+class AccountDetails(BaseModel):
+    id: int
+    name: str
+    holderName: str
+    accountNumber: str
+    balance: float
+    credit: int
+    debit: int
 
 class AccountResponse(BaseModel):
     isSuccess: bool = True
-    msg: str = "account created successful"
-    id: int
-    user_id: int
-    account_type: AccountTypeEnum
-    bank_name: Optional[str]
-    account_name: str
-    account_number: int
-    balance: float
+    msg: str = "Account fetched successfully"
+    account: List[AccountDetails]

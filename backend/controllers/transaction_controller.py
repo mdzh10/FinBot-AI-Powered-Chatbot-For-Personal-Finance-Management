@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from config.db.database import get_db
-from services.transaction_service import get_all_transactions
-from services.transaction_service import add_transaction,update_transaction
-from schemas.transaction_schema import TransactionResponse
-from schemas.transaction_schema import TransactionCreate
+from services.transaction_service import add_transaction, get_all_transactions, update_transaction
+from schemas.transaction_schema import TransactionResponse, TransactionCreate
 from typing import List
+from fastapi import HTTPException
 
 router = APIRouter()
 
@@ -19,7 +18,7 @@ async def get_transactions(user_id: int, db: Session = Depends(get_db)):
 
     return transactions
 
-@router.post("/addtransaction")
+@router.post("/add")
 async def create_transaction(transaction: TransactionCreate, db: Session= Depends(get_db)):
 
     try:
@@ -28,7 +27,7 @@ async def create_transaction(transaction: TransactionCreate, db: Session= Depend
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.post("/modifytranscation/{transaction_id}")  
+@router.post("/modify/{transaction_id}")  
 async def modify_transaction(transaction_id: int, transaction: TransactionCreate, db: Session=Depends(get_db)):
     try:
         modified_transaction=await update_transaction(db, transaction_id,transaction)

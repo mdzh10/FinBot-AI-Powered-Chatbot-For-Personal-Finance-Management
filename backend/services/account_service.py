@@ -1,26 +1,30 @@
 from sqlalchemy.orm import Session
 from models.account import Account
-from schemas.account_schema import AccountResponse
+from schemas.account_schema import AccountResponse, AccountDetails
 from typing import List
 
-async def get_all_accounts(db: Session, user_id: int) -> List[AccountResponse]:
+async def get_all_accounts(db: Session, user_id: int) -> AccountResponse:
     # Fetch all accounts for the given user
     accounts = db.query(Account).filter(Account.user_id == user_id).all()
 
     if not accounts:
-        return None
+        return AccountResponse(isSuccess=False, msg="No accounts found", accounts=[]).dict()  # Ensure dict conversion
 
-    # Prepare the account responses
-    account_list = []
-    for account in accounts:
-        account_list.append(AccountResponse(
+    # Prepare the account list based on the specified structure
+    account_list = [
+        AccountDetails(
             id=account.id,
-            user_id=account.user_id,
-            account_type=account.account_type,
-            bank_name=account.bank_name,
-            account_name=account.account_name,
-            account_number=account.account_number,
-            balance=account.balance
-        ))
+            name=account.account_name,
+            holderName=account.account_name,
+            accountNumber=str(account.account_number),
+            balance=account.balance,
+            credit=account.credit,
+            debit=account.debit
+        ) for account in accounts
+    ]
 
-    return account_list
+    return AccountResponse(
+        isSuccess=True,
+        msg="Account fetched successfully",
+        account=account_list
+    ).dict()  # Convert to dictionary

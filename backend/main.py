@@ -5,7 +5,7 @@ from controllers.dashboard_controller import router as dashboard_router
 from controllers.transaction_controller import router as txn_router
 from controllers.account_controller import router as acc_router
 from controllers.receipt_controller import router as receipt_router
-from controllers.visualization_controller import router as report_router
+from controllers.visualization_controller import router as report_router # type: ignore
 from config.db.database import database, create_tables
 
 app = FastAPI()

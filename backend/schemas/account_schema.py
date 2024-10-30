@@ -28,4 +28,4 @@ class AccountDetails(BaseModel):
 class AccountResponse(BaseModel):
     isSuccess: bool = True
     msg: str = "Account fetched successfully"
-    accounts: List[AccountDetails]
+    account: List[AccountDetails]

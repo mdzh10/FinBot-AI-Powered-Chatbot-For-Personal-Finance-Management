@@ -8,23 +8,23 @@ async def get_all_accounts(db: Session, user_id: int) -> AccountResponse:
     accounts = db.query(Account).filter(Account.user_id == user_id).all()
 
     if not accounts:
-        return AccountResponse(isSuccess=False, msg="No accounts found", accounts=[])
+        return AccountResponse(isSuccess=False, msg="No accounts found", accounts=[]).dict()  # Ensure dict conversion
 
     # Prepare the account list based on the specified structure
-    account_list = []
-    for account in accounts:
-        account_list.append(AccountDetails(
+    account_list = [
+        AccountDetails(
             id=account.id,
-            name=account.account_name,           # Assuming account_name as 'name'
-            holderName=account.account_name,      # Using account_name as 'holderName'
-            accountNumber=str(account.account_number),  # Convert account number to string
+            name=account.account_name,
+            holderName=account.account_name,
+            accountNumber=str(account.account_number),
             balance=account.balance,
             credit=account.credit,
             debit=account.debit
-        ))
+        ) for account in accounts
+    ]
 
     return AccountResponse(
         isSuccess=True,
         msg="Account fetched successfully",
-        accounts=account_list
-    )
+        account=account_list
+    ).dict()  # Convert to dictionary

@@ -5,6 +5,7 @@ from controllers.dashboard_controller import router as dashboard_router
 from controllers.transaction_controller import router as txn_router
 from controllers.account_controller import router as acc_router
 from controllers.receipt_controller import router as receipt_router
+from controllers.visualization_controller import router as report_router
 from config.db.database import database, create_tables
 
 app = FastAPI()
@@ -23,6 +24,7 @@ app.include_router(dashboard_router, prefix="/dashboard")
 app.include_router(txn_router, prefix="/transaction")
 app.include_router(acc_router, prefix="/account")
 app.include_router(receipt_router, prefix="/receipt")
+app.include_router(report_router, prefix="/report")
 
 @app.on_event("startup")
 async def startup():

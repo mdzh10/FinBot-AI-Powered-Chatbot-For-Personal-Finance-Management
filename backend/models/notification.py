@@ -1,6 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, Enum, DateTime
+from sqlalchemy import Column, Integer, String, DateTime
 from config.db.database import Base
-import enum
 
 class Notification(Base):
 

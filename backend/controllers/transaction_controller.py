@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from config.db.database import get_db
-from services.transaction_service import add_transaction, get_all_transactions, update_transaction
+from services.transaction_service import add_transaction, get_all_transactions, update_transaction, delete_transaction_by_id
 from schemas.transaction_schema import TransactionResponse, TransactionCreate
 from typing import List
 from fastapi import HTTPException
@@ -34,3 +34,13 @@ async def modify_transaction(transaction_id: int, transaction: TransactionCreate
         return modified_transaction
     except Exception as e:
         raise HTTPException(status_code=400, details=str(e))
+
+@router.delete("/delete/{transaction_id}")
+async def delete_transaction(transaction_id: int, db: Session = Depends(get_db)):
+    try:
+        deleted_transaction = delete_transaction_by_id(db, transaction_id)
+        if not deleted_transaction:
+            raise HTTPException(status_code=404, detail="Transaction not found")
+        return {"message": "Transaction deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) 

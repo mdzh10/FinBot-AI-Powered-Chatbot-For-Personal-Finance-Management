@@ -17,7 +17,7 @@ class LandingPage extends StatelessWidget{
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Fintracker", style: theme.textTheme.headlineLarge!.apply(color: theme.colorScheme.primary, fontWeightDelta: 1),),
+              Text("Finbot", style: theme.textTheme.headlineLarge!.apply(color: theme.colorScheme.primary, fontWeightDelta: 1),),
               const SizedBox(height: 15,),
               Text("Easy method to manage your savings", style: theme.textTheme.headlineMedium!.apply(color: ColorHelper.lighten(theme.colorScheme.primary, 0.1)),),
               const SizedBox(height: 25,),
@@ -48,7 +48,6 @@ class LandingPage extends StatelessWidget{
                 ],
               ),
               const Expanded(child: SizedBox()),
-              const Text("*Since this application is currently in beta, be prepared for UI changes and unexpected behaviours."),
               const SizedBox(height: 20,),
               Container(
                 alignment: Alignment.bottomRight,

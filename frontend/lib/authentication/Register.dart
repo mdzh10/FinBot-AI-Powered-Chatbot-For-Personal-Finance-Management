@@ -37,7 +37,6 @@ class _RegisterPageState extends State<RegisterPage> {
     const url = 'http://192.168.1.33:8000/auth/signup';
 
     try {
-      print("Tapped 1");
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -51,7 +50,6 @@ class _RegisterPageState extends State<RegisterPage> {
         }),
       );
 
-      print("Tapped 2");
       print("Response Status: ${response.statusCode}");
       print("Response Body: ${response.body}");
 

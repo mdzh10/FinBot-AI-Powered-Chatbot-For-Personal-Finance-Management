@@ -80,6 +80,7 @@ class _SigninPageState extends State<SigninPage> {
                   isFullWidth: true,
                   onPressed: () {
                     cubit.updateAccessToken(loginResponse.accessToken);
+                    cubit.updateUserDetails(loginResponse.userName, loginResponse.userId);
                     setState(() {
                       _message = loginResponse.msg;
                     });

@@ -3,9 +3,9 @@ class LoginResponse {
   final String msg;
   final String accessToken;
   final String? tokenType;
-  final int? userId;
+  final int userId;
   final String? email;
-  final String? userName;
+  final String userName;
   final String? phoneNumber;
 
   LoginResponse({
@@ -13,7 +13,7 @@ class LoginResponse {
     required this.msg,
     required this.accessToken,
     this.tokenType,
-    this.userId,
+    required this.userId,
     required this.email,
     required this.userName,
     required this.phoneNumber

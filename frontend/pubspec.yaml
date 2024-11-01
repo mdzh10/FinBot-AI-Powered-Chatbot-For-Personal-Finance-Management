@@ -43,6 +43,7 @@ dependencies:
   flutter_bloc: ^8.1.6
   material_symbols_icons: ^4.2788.0
   currency_picker: ^2.0.21
+  events_emitter: ^0.5.2
 
 dev_dependencies:
   flutter_test:

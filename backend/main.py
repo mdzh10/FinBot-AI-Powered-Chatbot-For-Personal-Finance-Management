@@ -7,6 +7,7 @@ from controllers.account_controller import router as acc_router
 from controllers.receipt_controller import router as receipt_router
 from controllers.visualization_controller import router as report_router
 from config.db.database import database, create_tables
+from controllers.category_controller import router as category_router
 
 app = FastAPI()
 # Add the CORS middleware
@@ -25,6 +26,7 @@ app.include_router(txn_router, prefix="/transaction")
 app.include_router(acc_router, prefix="/account")
 app.include_router(receipt_router, prefix="/receipt")
 app.include_router(report_router, prefix="/report")
+app.include_router(category_router, prefix="/category")
 
 @app.on_event("startup")
 async def startup():

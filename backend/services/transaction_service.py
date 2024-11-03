@@ -58,3 +58,14 @@ async def update_transaction(db: Session,transaction_id: int, transaction: Trans
     db.commit()
     db.refresh(existing_transaction)
     return existing_transaction
+
+def delete_transaction_by_id(db: Session, transaction_id: int):
+    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    if transaction is None:
+        print(f"No transaction found with ID: {transaction_id}")
+        return None
+    print(f"Deleting transaction with ID: {transaction_id}")
+    db.delete(transaction)
+    db.commit()
+    db.refresh(transaction)
+    return transaction

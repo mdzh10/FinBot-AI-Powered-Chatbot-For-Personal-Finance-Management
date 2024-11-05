@@ -12,20 +12,24 @@ class AccountCreate(BaseModel):
    bank_name: Optional[str] = None  # Applicable for bank accounts
    account_name: str
    account_number: int
-   credit: int
-   debit: int
-   balance: int
+   credit: float
+   debit: float
+   balance: float
 
 class AccountDetails(BaseModel):
    id: int
-   name: str
-   holderName: str
-   accountNumber: str
-   balance: float
-   credit: int
-   debit: int
+class AccountDetails(BaseModel):
+   id: int
+   user_id: Optional[int] = None
+   account_type: Optional[AccountTypeEnum] = None
+   name: Optional[str] = None
+   holderName: Optional[str] = None
+   accountNumber: Optional[int] = None
+   balance: Optional[float] = None
+   credit: Optional[float] = None
+   debit: Optional[float] = None
 
 class AccountResponse(BaseModel):
    isSuccess: bool = True
    msg: str = "Account fetched successfully"
-   account: List[AccountDetails]
+   account: Optional[List[AccountDetails]] = None  # Make account optional

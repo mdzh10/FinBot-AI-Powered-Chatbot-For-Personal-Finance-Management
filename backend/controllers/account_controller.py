@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from config.db.database import get_db
 from services.account_service import get_all_accounts, add_new_account, update_account, delete_account
-from schemas.account_schema import AccountResponse, AccountCreate
+from schemas.account_schema import AccountDetails, AccountResponse, AccountCreate
 from typing import List
 
 router = APIRouter()
@@ -13,16 +13,23 @@ async def get_accounts(user_id: int, db: Session = Depends(get_db)):
    accounts = await get_all_accounts(db, user_id)
    return accounts  # Directly return the response from service layer
 
-@router.post("/accounts/")
-async def create_account(user_id: int, account_data: AccountCreate, db: Session = Depends(get_db)):
-   return await add_new_account(db, user_id, account_data)
+@router.post("/create", response_model=AccountResponse)
+async def create_account(account_data: AccountCreate, db: Session = Depends(get_db)):
+   try:
+        return await add_new_account(db, account_data)
+   except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-@router.put("/accounts/{account_id}", response_model=AccountResponse)
-async def update_account_details(account_id: int, account_data: AccountCreate, db: Session = Depends(get_db)):
-   updated_account = await update_account(db, account_id, account_data)
-   return updated_account
+@router.put("/update", response_model=AccountResponse)
+async def update_account_details(account_data: AccountDetails, db: Session = Depends(get_db)):
+   try:
+        return await update_account(db, account_data)
+   except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-@router.delete("/accounts/{account_id}", response_model=AccountResponse)
+@router.delete("/delete/{account_id}", response_model=AccountResponse)
 async def delete_account_endpoint(account_id: int, db: Session = Depends(get_db)):
-   deleted_account = await delete_account(db, account_id)
-   return deleted_account
+   try:
+        return await delete_account(db, account_id)
+   except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

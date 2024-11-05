@@ -18,8 +18,6 @@ class AccountCreate(BaseModel):
 
 class AccountDetails(BaseModel):
    id: int
-class AccountDetails(BaseModel):
-   id: int
    user_id: Optional[int] = None
    account_type: Optional[AccountTypeEnum] = None
    name: Optional[str] = None

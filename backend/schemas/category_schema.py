@@ -1,17 +1,19 @@
 from pydantic import BaseModel
-from datetime import datetime
-from typing import Optional
+from typing import List, Union
+
+class BaseResponse(BaseModel):
+    isSuccess: bool = True
+    msg: str = "Operation successful"
 
 class CategoryCreate(BaseModel):
     """Schema for creating a new category."""
     category_name: str
 
-class CategoryResponse(BaseModel):
-    """Schema for category response with auto-assigned values included."""
+class CategoryDetails(BaseModel):
+    """Schema for the individual category details."""
     category_id: int
     category_name: str
-    created_at: datetime
-    updated_at: Optional[datetime]  # Will be None if not updated yet
 
-    class Config:
-        orm_mode = True  # Enables compatibility with ORM objects
+class CategoryResponse(BaseResponse):
+    """Schema for response that includes category details or a list of categories."""
+    data: Union[CategoryDetails, List[CategoryDetails]]

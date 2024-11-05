@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from config.db.database import database, create_tables
 from controllers.authentication_controller import router as auth_router
 from controllers.dashboard_controller import router as dashboard_router
 from controllers.transaction_controller import router as txn_router
 from controllers.account_controller import router as acc_router
 from controllers.receipt_controller import router as receipt_router
 from controllers.visualization_controller import router as report_router
-from config.db.database import database, create_tables
 from controllers.category_controller import router as category_router
 
 app = FastAPI()
@@ -40,6 +40,3 @@ async def shutdown():
 @app.get("/")
 async def root():
     return {"message": "Successfully connected to Supabase!"}
-
-
-app.include_router(category_router, prefix="/category")

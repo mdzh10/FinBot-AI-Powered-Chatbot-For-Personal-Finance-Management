@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../bloc/cubit/app_cubit.dart';
+import 'home/home.screen.dart';
 import 'onboard/onboard_screen.dart';
 
 class MainScreen extends StatefulWidget{
@@ -27,13 +28,15 @@ class _MainScreenState extends State<MainScreen>{
         AppCubit cubit = context.read<AppCubit>();
         if(cubit.state.accessToken == null){
           return OnboardScreen();
+        } else {
+          print("cubit userId : " + cubit.state.userId.toString());
         }
         return  Scaffold(
           body: PageView(
             controller: _controller,
             physics: const NeverScrollableScrollPhysics(),
-            children: const [
-              // HomeScreen(),
+            children: [
+              HomeScreen(cubit.state.userId),
               // AccountsScreen(),
               // CategoriesScreen(),
               // SettingsScreen()

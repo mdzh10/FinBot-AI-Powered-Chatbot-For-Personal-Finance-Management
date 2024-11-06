@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 
+
 class VisualizationRequest(BaseModel):
     prompt: str
+
 
 class VisualizationResponse(BaseModel):
     chart: str  # Base64-encoded image

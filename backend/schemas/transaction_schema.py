@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+
 class TransactionCreate(BaseModel):
     user_id: int
     account_id: int
@@ -11,6 +12,7 @@ class TransactionCreate(BaseModel):
     amount: float
     transaction_type: str  # debit or credit
     transaction_date: datetime
+
 
 class TransactionResponse(BaseModel):
     isSuccess: bool = True

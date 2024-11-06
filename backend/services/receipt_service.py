@@ -11,7 +11,7 @@ from typing import List
 
 # Replace 'your_gpt4_api_key' with your actual GPT-4 API key
 GPT4_API_URL = "https://api.openai.com/v1/chat/completions"
-MODEL="gpt-4o"
+MODEL = "gpt-4o"
 
 
 def encode_image(image: Image.Image) -> str:
@@ -32,13 +32,23 @@ def extract_items_from_image(base64_image: str) -> List[ItemDetails]:
     data = {
         "model": MODEL,
         "messages": [
-            {"role": "system", "content": "You are a helpful assistant that extracts information from receipt images."},
-            {"role": "user", "content": [
-                {"type": "text", "text": "Extract the purchased items, their category, and price of each items from this receipt image"},
-                {"type": "image_url", "image_url": {
-                    "url": f"data:image/png;base64,{base64_image}"
-                }}
-            ]}
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that extracts information from receipt images.",
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Extract the purchased items, their category, and price of each items from this receipt image",
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{base64_image}"},
+                    },
+                ],
+            },
         ],
         "temperature": 0.0,
     }
@@ -48,14 +58,16 @@ def extract_items_from_image(base64_image: str) -> List[ItemDetails]:
     result = response.json()
 
     # Extract the items from the response
-    extracted_text = result['choices'][0]['message']['content']
+    extracted_text = result["choices"][0]["message"]["content"]
 
     # Assuming the text is structured as: item, category, price
     items = []
 
     # Define regex patterns to extract item, category, and price
     item_pattern = r"\*\*(.+?)\*\*"  # Extracts the item name between double asterisks
-    category_pattern = r"Category:\s+([A-Za-z\s]+)"  # Extracts the category after "Category:"
+    category_pattern = (
+        r"Category:\s+([A-Za-z\s]+)"  # Extracts the category after "Category:"
+    )
     price_pattern = r"Price:\s+\$(\d+\.\d{2})"  # Extracts the price after "Price:"
 
     # Find all matches for item names, categories, and prices
@@ -65,13 +77,14 @@ def extract_items_from_image(base64_image: str) -> List[ItemDetails]:
 
     # Zip the results together to create structured data
     for item, category, price in zip(item_matches, category_matches, price_matches):
-        items.append(ItemDetails(
-            item=item.strip(),
-            category=category.strip(),
-            price=float(price.strip())
-        ))
+        items.append(
+            ItemDetails(
+                item=item.strip(), category=category.strip(), price=float(price.strip())
+            )
+        )
 
     return items
+
 
 async def process_receipt(file: UploadFile, db) -> List[ItemDetails]:
     """Processes the receipt image and extracts items."""
@@ -80,7 +93,9 @@ async def process_receipt(file: UploadFile, db) -> List[ItemDetails]:
     base64_image = encode_image(image)
 
     # Create a new receipt record in the database
-    receipt = Receipt(original_text="Extracted receipt text from GPT-4")  # You may want to store more detailed info
+    receipt = Receipt(
+        original_text="Extracted receipt text from GPT-4"
+    )  # You may want to store more detailed info
     db.add(receipt)
     db.commit()
     db.refresh(receipt)  # Refresh to get the receipt ID
@@ -94,7 +109,7 @@ async def process_receipt(file: UploadFile, db) -> List[ItemDetails]:
             item_name=item.item,
             category=item.category,
             price=item.price,
-            quantity=item.quantity
+            quantity=item.quantity,
         )
         db.add(receipt_item)
 
@@ -103,5 +118,5 @@ async def process_receipt(file: UploadFile, db) -> List[ItemDetails]:
 
     # Refresh the receipt to retrieve all its items
     db.refresh(receipt)
-    
+
     return extracted_items

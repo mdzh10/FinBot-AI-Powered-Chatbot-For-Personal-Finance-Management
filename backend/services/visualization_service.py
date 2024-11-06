@@ -11,6 +11,7 @@ from config.db.database import engine
 CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions"
 MODEL = "gpt-4o"
 
+
 async def generate_visualization(prompt: str):
     # Dynamically generate the database schema
     DATABASE_SCHEMA = generate_database_schema()
@@ -18,25 +19,25 @@ async def generate_visualization(prompt: str):
     # Step 1: Generate SQL code to fetch the data
     sql_query = await generate_sql_code(prompt, DATABASE_SCHEMA)
     # print(sql_query)
-    
+
     if not sql_query:
         return {
             "chart": None,
             "analysis": "Failed to generate SQL query for data extraction",
             "isSuccess": False,
-            "msg": "Failed to generate SQL query for data extraction"
+            "msg": "Failed to generate SQL query for data extraction",
         }
 
     # Step 2: Execute SQL query to fetch data
     data = execute_sql_query(sql_query)
     # print(data)
-    
+
     if data is None:
         return {
             "chart": None,
             "analysis": "Failed to fetch data with generated SQL query",
             "isSuccess": False,
-            "msg": "Failed to fetch data with generated SQL query"
+            "msg": "Failed to fetch data with generated SQL query",
         }
 
     # Step 3: Generate Python code to create the plot with fetched data
@@ -49,7 +50,7 @@ async def generate_visualization(prompt: str):
             "chart": None,
             "analysis": "Failed to generate Python code for visualization",
             "isSuccess": False,
-            "msg": "Failed to generate Python code for visualization"
+            "msg": "Failed to generate Python code for visualization",
         }
 
     # Step 4: Execute the generated Python code to create the chart
@@ -60,7 +61,7 @@ async def generate_visualization(prompt: str):
             "chart": None,
             "analysis": "Failed to generate the chart image",
             "isSuccess": False,
-            "msg": "Failed to generate the chart image"
+            "msg": "Failed to generate the chart image",
         }
 
     # Successful response with chart and analysis
@@ -68,8 +69,9 @@ async def generate_visualization(prompt: str):
         "chart": chart_image,
         "analysis": "Visualization generated successfully",
         "isSuccess": True,
-        "msg": "Visualization generated successfully"
+        "msg": "Visualization generated successfully",
     }
+
 
 async def generate_sql_code(prompt: str, DATABASE_SCHEMA):
     # Combine the prompt with the database schema
@@ -87,8 +89,11 @@ async def generate_sql_code(prompt: str, DATABASE_SCHEMA):
     data = {
         "model": MODEL,
         "messages": [
-            {"role": "system", "content": "Generate SQL code based on a specific database schema. No explanation needed; just SQL code is sufficient as it would be directly executed to generate data"},
-            {"role": "user", "content": sql_prompt}
+            {
+                "role": "system",
+                "content": "Generate SQL code based on a specific database schema. No explanation needed; just SQL code is sufficient as it would be directly executed to generate data",
+            },
+            {"role": "user", "content": sql_prompt},
         ],
         "temperature": 0.0,
     }
@@ -96,13 +101,14 @@ async def generate_sql_code(prompt: str, DATABASE_SCHEMA):
     response = requests.post(CHATGPT_API_URL, headers=headers, json=data)
     result = response.json()
 
-    sql_code = result['choices'][0]['message']['content']
+    sql_code = result["choices"][0]["message"]["content"]
     return sql_code
+
 
 def execute_sql_query(sql_query):
     with engine.connect() as con:
         """
-    Extracts SQL code from the API response and executes it using SQLAlchemy.
+        Extracts SQL code from the API response and executes it using SQLAlchemy.
         """
         try:
             # Extract the SQL code
@@ -121,6 +127,7 @@ def execute_sql_query(sql_query):
             print(f"Error executing SQL query: {e}")
             return None
 
+
 async def generate_plot_code(prompt: str, data):
     # Prepare the prompt with the data for plot generation
     plot_prompt = (
@@ -137,8 +144,11 @@ async def generate_plot_code(prompt: str, data):
     data = {
         "model": MODEL,
         "messages": [
-            {"role": "system", "content": "Generate Python code for data visualization using matplotlib. No explanation needed; just python code is sufficient as it would be directly executed to generate plots"},
-            {"role": "user", "content": plot_prompt}
+            {
+                "role": "system",
+                "content": "Generate Python code for data visualization using matplotlib. No explanation needed; just python code is sufficient as it would be directly executed to generate plots",
+            },
+            {"role": "user", "content": plot_prompt},
         ],
         "temperature": 0.0,
     }
@@ -146,14 +156,17 @@ async def generate_plot_code(prompt: str, data):
     response = requests.post(CHATGPT_API_URL, headers=headers, json=data)
     result = response.json()
 
-    python_code = result['choices'][0]['message']['content']
+    python_code = result["choices"][0]["message"]["content"]
     return python_code
+
 
 def execute_generated_code(python_code: str):
     local_vars = {}
     try:
         # Execute the generated Python code
-        exec(python_code, {"plt": plt, "BytesIO": BytesIO, "base64": base64}, local_vars)
+        exec(
+            python_code, {"plt": plt, "BytesIO": BytesIO, "base64": base64}, local_vars
+        )
         img_buffer = local_vars.get("img_buffer")
 
         if img_buffer:

@@ -8,6 +8,7 @@ engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+
 # Dependency to get a SQLAlchemy session
 def get_db():
     db = SessionLocal()
@@ -16,7 +17,10 @@ def get_db():
     finally:
         db.close()
 
+
 # Ensure models are created in the database
 def create_tables():
-    Base.metadata.create_all(bind=engine)  # This should create all tables based on models
+    Base.metadata.create_all(
+        bind=engine
+    )  # This should create all tables based on models
     print("Tables created successfully.")  # Add this for debugging

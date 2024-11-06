@@ -1,35 +1,46 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from config.db.database import get_db
-from services.account_service import get_all_accounts, add_new_account, update_account, delete_account
+from services.account_service import (
+    get_all_accounts,
+    add_new_account,
+    update_account,
+    delete_account,
+)
 from schemas.account_schema import AccountDetails, AccountResponse, AccountCreate
 from typing import List
 
 router = APIRouter()
 
+
 @router.get("/{user_id}", response_model=AccountResponse)
 async def get_accounts(user_id: int, db: Session = Depends(get_db)):
-   # Fetch accounts using the service layer
-   accounts = await get_all_accounts(db, user_id)
-   return accounts  # Directly return the response from service layer
+    # Fetch accounts using the service layer
+    accounts = await get_all_accounts(db, user_id)
+    return accounts  # Directly return the response from service layer
+
 
 @router.post("/create", response_model=AccountResponse)
 async def create_account(account_data: AccountCreate, db: Session = Depends(get_db)):
-   try:
+    try:
         return await add_new_account(db, account_data)
-   except Exception as e:
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.put("/update", response_model=AccountResponse)
-async def update_account_details(account_data: AccountDetails, db: Session = Depends(get_db)):
-   try:
+async def update_account_details(
+    account_data: AccountDetails, db: Session = Depends(get_db)
+):
+    try:
         return await update_account(db, account_data)
-   except Exception as e:
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @router.delete("/delete/{account_id}", response_model=AccountResponse)
 async def delete_account_endpoint(account_id: int, db: Session = Depends(get_db)):
-   try:
+    try:
         return await delete_account(db, account_id)
-   except Exception as e:
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

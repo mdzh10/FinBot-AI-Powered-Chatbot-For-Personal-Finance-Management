@@ -7,6 +7,7 @@ from typing import List
 
 router = APIRouter()
 
+
 @router.post("/extract-items/", response_model=List[ItemDetails])
 async def extract_items(file: UploadFile = File(...), db: Session = Depends(get_db)):
     # Process the receipt and save items to the database

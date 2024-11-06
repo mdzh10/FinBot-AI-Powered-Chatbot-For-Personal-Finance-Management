@@ -8,16 +8,16 @@ from services.account_service import (
     delete_account,
 )
 from schemas.account_schema import AccountDetails, AccountResponse, AccountCreate
-from typing import List
 
 router = APIRouter()
 
 
 @router.get("/{user_id}", response_model=AccountResponse)
 async def get_accounts(user_id: int, db: Session = Depends(get_db)):
-    # Fetch accounts using the service layer
-    accounts = await get_all_accounts(db, user_id)
-    return accounts  # Directly return the response from service layer
+    try:
+        return await get_all_accounts(db, user_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/create", response_model=AccountResponse)

@@ -23,9 +23,9 @@ class AccountDetails(BaseModel):
     id: int
     user_id: Optional[int] = None
     account_type: Optional[AccountTypeEnum] = None
-    name: Optional[str] = None
-    holderName: Optional[str] = None
-    accountNumber: Optional[int] = None
+    bank_name: Optional[str] = None
+    account_name: Optional[str] = None
+    account_number: Optional[int] = None
     balance: Optional[float] = None
     credit: Optional[float] = None
     debit: Optional[float] = None

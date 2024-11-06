@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from models.account import Account
 from schemas.account_schema import AccountCreate, AccountResponse, AccountDetails
-from typing import List
 from fastapi import HTTPException
 
 
@@ -18,9 +17,10 @@ async def get_all_accounts(db: Session, user_id: int) -> AccountResponse:
     account_list = [
         AccountDetails(
             id=account.id,
-            name=account.account_name,
-            holderName=account.account_name,
-            accountNumber=account.account_number,
+            bank_name=account.bank_name,
+            account_type=account.account_type,
+            account_name=account.account_name,
+            account_number=account.account_number,
             balance=account.balance,
             credit=account.credit,
             debit=account.debit,
@@ -73,9 +73,9 @@ async def add_new_account(db: Session, account_data: AccountCreate):
                 id=new_account.id,
                 user_id=new_account.user_id,
                 account_type=new_account.account_type,
-                name=new_account.bank_name,
-                holderName=new_account.account_name,
-                accountNumber=new_account.account_number,
+                bank_name=new_account.bank_name,
+                account_name=new_account.account_name,
+                account_number=new_account.account_number,
                 balance=new_account.balance,
                 credit=new_account.credit,
                 debit=new_account.debit,
@@ -93,12 +93,12 @@ async def update_account(db: Session, account_data: AccountDetails):
     # Update the fields as needed
     if account_data.user_id:
         account.user_id = account_data.user_id
-    if account_data.name:
-        account.bank_name = account_data.name
-    if account_data.holderName:
-        account.account_name = account_data.holderName
-    if account_data.accountNumber:
-        account.account_number = account_data.accountNumber
+    if account_data.bank_name:
+        account.bank_name = account_data.bank_name
+    if account_data.account_name:
+        account.account_name = account_data.account_name
+    if account_data.account_number:
+        account.account_number = account_data.account_number
     if account_data.balance:
         account.balance = account_data.balance
     if account_data.credit:
@@ -111,8 +111,6 @@ async def update_account(db: Session, account_data: AccountDetails):
     db.commit()
     db.refresh(account)
 
-    account = db.query(Account).filter(Account.id == account_data.id).first()
-
     return AccountResponse(
         msg="Account Updated successfully",
         account=[
@@ -120,9 +118,9 @@ async def update_account(db: Session, account_data: AccountDetails):
                 id=account.id,
                 user_id=account.user_id,
                 account_type=account.account_type,
-                name=account.bank_name,
-                holderName=account.account_name,
-                accountNumber=account.account_number,
+                bank_name=account.bank_name,
+                account_name=account.account_name,
+                account_number=account.account_number,
                 balance=account.balance,
                 credit=account.credit,
                 debit=account.debit,
@@ -139,5 +137,6 @@ async def delete_account(db: Session, account_id: int):
 
     db.delete(account)
     db.commit()
+    db.refresh(account)
 
     return AccountResponse(msg="Account Deleted Successfully")

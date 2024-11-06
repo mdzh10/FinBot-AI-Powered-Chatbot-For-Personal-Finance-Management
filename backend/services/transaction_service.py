@@ -67,5 +67,4 @@ def delete_transaction_by_id(db: Session, transaction_id: int):
     print(f"Deleting transaction with ID: {transaction_id}")
     db.delete(transaction)
     db.commit()
-    db.refresh(transaction)
     return transaction

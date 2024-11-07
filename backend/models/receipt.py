@@ -1,25 +1,15 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Float
 from config.db.database import Base
-
-class Receipt(Base):
-    __tablename__ = "receipts"
-
-    id = Column(Integer, primary_key=True, index=True)
-    original_text = Column(String, nullable=False)
-
-    # Relationship to the items in the receipt
-    items = relationship("ReceiptItem", back_populates="receipt")
 
 
 class ReceiptItem(Base):
-    __tablename__ = "receipt_items"
+    __tablename__ = "receipts"
 
     id = Column(Integer, primary_key=True, index=True)
-    receipt_id = Column(Integer, ForeignKey('receipts.id'), nullable=False)
     item_name = Column(String, nullable=False)
     category = Column(String, nullable=False)
     price = Column(Float, nullable=False)
     quantity = Column(Integer, nullable=False)
 
-    receipt = relationship("Receipt", back_populates="items")
+    def __repr__(self):
+        return f"<ReceiptItem(id={self.id}, name={self.item_name}, price={self.price}, category={self.category})>"

@@ -1,19 +1,45 @@
+enum AccountType { bank, cash }
+
+extension AccountTypeExtension on AccountType {
+  static AccountType fromString(String type) {
+    switch (type) {
+      case 'bank':
+        return AccountType.bank;
+      case 'cash':
+        return AccountType.cash;
+      default:
+        throw ArgumentError('Unknown AccountType: $type');
+    }
+  }
+
+  String toJson() {
+    switch (this) {
+      case AccountType.bank:
+        return 'bank';
+      case AccountType.cash:
+        return 'cash';
+    }
+  }
+}
+
 class Account {
   int? id;
-  String name;
-  String holderName;
-  String accountNumber;
-  bool? isDefault;
+  int? userId;
+  AccountType? accountType;
+  String? bankName;
+  String? accountName;
+  int? accountNumber;
   double? balance;
   double? credit;
   double? debit;
 
   Account({
     this.id,
-    required this.name,
-    required this.holderName,
-    required this.accountNumber,
-    this.isDefault,
+    this.userId,
+    this.accountType,
+    this.bankName,
+    this.accountName,
+    this.accountNumber,
     this.credit,
     this.debit,
     this.balance,
@@ -21,10 +47,11 @@ class Account {
 
   factory Account.fromJson(Map<String, dynamic> data) => Account(
     id: data["id"],
-    name: data["name"],
-    holderName: data["holderName"] ?? "",
-    accountNumber: data["accountNumber"] ?? "",
-    isDefault: data["isDefault"] == 1 ? true : false,
+    userId: data["user_id"],
+    accountType: AccountTypeExtension.fromString(data["account_type"]),
+    bankName: data["bank_name"] ?? "",
+    accountName: data["account_name"] ?? "",
+    accountNumber: data["account_number"] ?? 0,
     credit: (data["credit"] ?? 0).toDouble(),
     debit: (data["debit"] ?? 0).toDouble(),
     balance: (data["balance"] ?? 0).toDouble(),
@@ -32,10 +59,11 @@ class Account {
 
   Map<String, dynamic> toJson() => {
     "id": id,
-    "name": name,
-    "holderName": holderName,
-    "accountNumber": accountNumber,
-    "isDefault": (isDefault ?? false) ? 1 : 0,
+    "user_id": userId,
+    "account_type": accountType?.toJson(),
+    "bank_name": bankName,
+    "account_name": accountName,
+    "account_number": accountNumber,
     "credit": credit,
     "debit": debit,
     "balance": balance,

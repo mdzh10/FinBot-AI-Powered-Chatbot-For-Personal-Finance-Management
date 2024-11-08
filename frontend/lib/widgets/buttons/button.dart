@@ -13,7 +13,6 @@ class AppButton extends StatelessWidget{
   final double? height;
   final double? width;
   final String? label;
-  final IconData? icon;
   final Color? color;
   final BorderRadius? borderRadius;
   final VoidCallback? onPressed;
@@ -26,7 +25,6 @@ class AppButton extends StatelessWidget{
   const AppButton({
     super.key,
     this.label,
-    this.icon,
     this.color,
     this.onPressed,
     this.onLongPress,
@@ -91,9 +89,9 @@ class AppButton extends StatelessWidget{
     double paddingStart = dimension*0.6;
     double paddingEnd = dimension*0.6;
 
-    if(icon != null){
-      paddingStart = dimension*0.5;
-    }
+    // if(icon != null){
+    //   paddingStart = dimension*0.5;
+    // }
     EdgeInsets padding = EdgeInsets.only(left: paddingStart, right: paddingEnd);
     if(width != null){
       padding = EdgeInsets.zero;
@@ -132,8 +130,8 @@ class AppButton extends StatelessWidget{
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    icon != null ? Icon(icon, color: typoColor, size: iconSize ?? (dimension - (dimension*(55/100))),) : const SizedBox(),
-                    icon != null && label!= null ? SizedBox(width: dimension*0.3,) : const SizedBox(),
+                    // icon != null ? Icon(icon, color: typoColor, size: iconSize ?? (dimension - (dimension*(55/100))),) : const SizedBox(),
+                    // icon != null && label!= null ? SizedBox(width: dimension*0.3,) : const SizedBox(),
                     label!= null ?Text(label??"" ,style: TextStyle(color: typoColor).merge(labelStyle),): const SizedBox()
                   ],
                 ),

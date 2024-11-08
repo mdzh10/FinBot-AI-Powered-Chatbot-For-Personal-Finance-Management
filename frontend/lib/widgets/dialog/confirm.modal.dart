@@ -28,7 +28,7 @@ class ConfirmModal extends StatelessWidget{
                 child: AppButton(
                     label: "No",
                     onPressed: onCancel,
-                    color: Theme.of(context).colorScheme.primary,
+                    // color: Theme.of(context).colorScheme.primary,
                     type: AppButtonType.outlined
                 )
             ),

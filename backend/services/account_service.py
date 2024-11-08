@@ -137,6 +137,5 @@ async def delete_account(db: Session, account_id: int):
 
     db.delete(account)
     db.commit()
-    # db.refresh(account)
 
     return AccountResponse(msg="Account Deleted Successfully")

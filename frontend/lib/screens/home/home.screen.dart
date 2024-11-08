@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
     final url = Uri.parse(
-        'http://192.168.1.33:8000/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
+        'http://192.168.1.34:8000/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
 
     try {
       final responseDashboard = await http.get(url);
@@ -97,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error: $e');
     }
 
-      final String apiUrl = "http://192.168.1.33:8000/account/"+userId.toString();
+      final String apiUrl = "http://192.168.1.34:8000/account/"+userId.toString();
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: {"Content-Type": "application/json"},

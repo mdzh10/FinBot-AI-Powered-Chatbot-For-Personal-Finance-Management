@@ -71,8 +71,8 @@ class _AccountSlider extends State<AccountsSlider>{
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(account.holderName, style: Theme.of(context).textTheme.bodyLarge?.apply(color: Colors.white.withOpacity(1), fontWeightDelta: 2),),
-                                      Text(account.name, style: Theme.of(context).textTheme.bodySmall?.apply(color: Colors.white.withOpacity(0.5)), textAlign: TextAlign.center,),
+                                      Text(account.accountName == null ? "" : account.accountName.toString(), style: Theme.of(context).textTheme.bodyLarge?.apply(color: Colors.white.withOpacity(1), fontWeightDelta: 2),),
+                                      Text(account.bankName == null ? "" : account.bankName.toString(), style: Theme.of(context).textTheme.bodySmall?.apply(color: Colors.white.withOpacity(0.5)), textAlign: TextAlign.center,),
                                     ],
                                   ),
                                   const Expanded(child:SizedBox()),

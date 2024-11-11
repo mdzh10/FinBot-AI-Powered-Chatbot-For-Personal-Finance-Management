@@ -1,13 +1,16 @@
-from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, Float
 from config.db.database import Base
 
 
 class Category(Base):
     __tablename__ = "categories"
 
-    category_id = Column(Integer, primary_key=True, index=True)
-    category_name = Column(String, nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    icon_code_point = Column(Integer, nullable=False)  # Storing icon code point
+    color_value = Column(Integer, nullable=False)  # Storing color as an integer
+    budget = Column(Float, nullable=True, default=0)
+    expense = Column(Float, nullable=True, default=0)
 
     def __repr__(self):
-        return f"<Category(category_id={self.category_id}, category_name={self.category_name})>"
+        return f"<Category(category_id={self.id}, category_name={self.name}, budget={self.budget}, expense={self.expense})>"

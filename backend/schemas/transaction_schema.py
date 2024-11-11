@@ -15,7 +15,7 @@ class TransactionCreate(BaseModel):
 
 class TransactionDetails(BaseModel):
     id: int
-    account_id: Optional[int] =  None
+    account_id: int
     category_id: Optional[int] = None
     title: Optional[str] = None
     description: Optional[str] = None

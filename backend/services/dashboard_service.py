@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.transaction import Transaction, TransactionType
+from models.transaction import Transaction, PaymentTypeEnum
 from models.account import Account
 from sqlalchemy import func
 from datetime import datetime
@@ -21,8 +21,8 @@ async def get_debits_credits_in_date_range(
         db.query(func.sum(Transaction.amount))
         .filter(
             Transaction.user_id == user_id,
-            Transaction.transaction_type == TransactionType.debit,
-            Transaction.transaction_date.between(start_date, end_date),
+            Transaction.type == PaymentTypeEnum.debit,
+            Transaction.datetime.between(start_date, end_date),
         )
         .scalar()
     )
@@ -31,8 +31,8 @@ async def get_debits_credits_in_date_range(
         db.query(func.sum(Transaction.amount))
         .filter(
             Transaction.user_id == user_id,
-            Transaction.transaction_type == TransactionType.credit,
-            Transaction.transaction_date.between(start_date, end_date),
+            Transaction.type == PaymentTypeEnum.credit,
+            Transaction.datetime.between(start_date, end_date),
         )
         .scalar()
     )

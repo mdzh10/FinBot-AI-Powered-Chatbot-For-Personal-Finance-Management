@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from config.db.database import Base
 
 
@@ -10,3 +11,9 @@ class User(Base):
     password_hash = Column(String)
     username = Column(String, nullable=False)  # New field
     phone_number = Column(String, nullable=False)  # New field
+
+    # Relationship to Account
+    accounts = relationship("Account", back_populates="user", cascade="all, delete-orphan")
+    
+    # Relationship to Transaction (if applicable)
+    transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")

@@ -1,28 +1,37 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
-
+from typing import List, Optional
 
 class TransactionCreate(BaseModel):
     user_id: int
     account_id: int
     category_id: int
-    item_name: str
-    quantity: Optional[int] = 1
+    title: str
+    description: Optional[str] = ""
     amount: float
-    transaction_type: str  # debit or credit
-    transaction_date: datetime
+    type: str  # Expected values: "debit" or "credit"
+    datetime: datetime
 
 
-class TransactionResponse(BaseModel):
-    isSuccess: bool = True
-    msg: str = "transaction created successfully"
+class TransactionDetails(BaseModel):
     id: int
-    user_id: int
     account_id: int
-    category_id: int
-    item_name: str
-    quantity: Optional[int] = 1
-    amount: float
-    transaction_type: str
-    transaction_date: datetime
+    category_id: Optional[int] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    type: Optional[str] = None  # "debit" or "credit"
+    datetime: datetime
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+class TransactionListResponse(BaseModel):
+    isSuccess: bool = True
+    msg: str = "Transaction fetched successfully"
+    user_id: int
+    transactions: List[TransactionDetails]
+
+    class Config:
+        arbitrary_types_allowed = True  # Allow datetime

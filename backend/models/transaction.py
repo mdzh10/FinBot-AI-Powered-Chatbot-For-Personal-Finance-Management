@@ -1,32 +1,35 @@
-from sqlalchemy import Column, Integer, Float, String, Enum, ForeignKey, DateTime
-from datetime import datetime
+from sqlalchemy import Column, Integer, Float, DateTime, String, Enum, ForeignKey
+from sqlalchemy.orm import relationship
 from config.db.database import Base
 import enum
+from datetime import datetime
 
-
-class TransactionType(enum.Enum):
+class PaymentTypeEnum(enum.Enum):
     debit = "debit"
     credit = "credit"
 
-
 class Transaction(Base):
-    __tablename__ = "transactions"
+    __tablename__ = 'transactions'
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    account_id = Column(
-        Integer, ForeignKey("accounts.id"), nullable=False
-    )  # Reference to the accounts table
-    category_id = Column(
-        Integer, nullable=False
-    )  # Category ID for categorizing the transaction
-    item_name = Column(String, nullable=False)  # Item name e.g., Groceries
-    quantity = Column(Integer, default=1)  # Quantity of items purchased or affected
-    amount = Column(Float, nullable=False)  # Transaction amount
-    transaction_type = Column(Enum(TransactionType), nullable=False)  # Debit or Credit
-    transaction_date = Column(
-        DateTime, default=datetime.utcnow
-    )  # Date of the transaction
+    # Primary key for Transaction
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)  # Foreign key to User
+    
+    # Foreign keys to Account and Category tables
+    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
+
+    # Transaction details
+    amount = Column(Float, nullable=False)
+    type = Column(Enum(PaymentTypeEnum), nullable=False)
+    datetime = Column(DateTime, default=datetime.utcnow)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+
+    # Relationships to Account and Category
+    account = relationship("Account", back_populates="transactions")
+    category = relationship("Category", back_populates="transactions")
+    user = relationship("User", back_populates="transactions")  # Link to User
 
     def __repr__(self):
-        return f"<Transaction(id={self.id}, amount={self.amount}, type={self.transaction_type}, account_id={self.account_id})>"
+        return f"<Transaction(id={self.id}, title={self.title}, amount={self.amount})>"

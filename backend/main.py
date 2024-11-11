@@ -8,6 +8,7 @@ from controllers.account_controller import router as acc_router
 from controllers.receipt_controller import router as receipt_router
 from controllers.visualization_controller import router as report_router
 from controllers.category_controller import router as category_router
+import models
 
 app = FastAPI()
 # Add the CORS middleware

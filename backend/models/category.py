@@ -7,8 +7,6 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-    icon_code_point = Column(Integer, nullable=False)  # Storing icon code point
-    color_value = Column(Integer, nullable=False)  # Storing color as an integer
     budget = Column(Float, nullable=True, default=0)
     expense = Column(Float, nullable=True, default=0)
 

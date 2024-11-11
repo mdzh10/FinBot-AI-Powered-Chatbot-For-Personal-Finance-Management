@@ -17,8 +17,6 @@ async def create_category(db: Session, category: CategoryCreate) -> CategoryResp
 
     new_category = Category(
         name=category.name,
-        icon_code_point=category.icon_code_point,
-        color_value=category.color_value,
         budget=category.budget,
         expense=category.expense,
     )
@@ -32,8 +30,6 @@ async def create_category(db: Session, category: CategoryCreate) -> CategoryResp
         data=CategoryDetails(
             id=new_category.id,
             name=new_category.name,
-            icon_code_point=new_category.icon_code_point,
-            color_value=new_category.color_value,
             budget=new_category.budget,
             expense=new_category.expense,
         ),
@@ -47,8 +43,6 @@ async def get_all_categories(db: Session) -> CategoryResponse:
         CategoryDetails(
             id=cat.id,
             name=cat.name,
-            icon_code_point=cat.icon_code_point,
-            color_value=cat.color_value,
             budget=cat.budget,
             expense=cat.expense,
         )
@@ -71,8 +65,6 @@ async def get_category_by_id(db: Session, category_id: int) -> CategoryResponse:
         data=CategoryDetails(
             id=category.id,
             name=category.name,
-            icon_code_point=category.icon_code_point,
-            color_value=category.color_value,
             budget=category.budget,
             expense=category.expense,
         ),
@@ -88,8 +80,6 @@ async def modify_category(db: Session, category: CategoryDetails) -> CategoryRes
         raise HTTPException(status_code=404, detail="Category not found")
 
     existing_category.name = category.name
-    existing_category.icon_code_point = category.icon_code_point
-    existing_category.color_value = category.color_value
     existing_category.budget = category.budget
     existing_category.expense = category.expense
 
@@ -102,8 +92,6 @@ async def modify_category(db: Session, category: CategoryDetails) -> CategoryRes
         data=CategoryDetails(
             id=existing_category.id,
             name=existing_category.name,
-            icon_code_point=existing_category.icon_code_point,
-            color_value=existing_category.color_value,
             budget=existing_category.budget,
             expense=existing_category.expense,
         ),

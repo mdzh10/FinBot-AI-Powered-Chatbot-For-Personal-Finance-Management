@@ -9,8 +9,6 @@ class BaseResponse(BaseModel):
 
 class CategoryCreate(BaseModel):
     name: str
-    icon_code_point: int
-    color_value: int
     budget: Optional[float] = 0
     expense: Optional[float] = 0
 
@@ -18,8 +16,6 @@ class CategoryCreate(BaseModel):
 class CategoryDetails(BaseModel):
     id: int
     name: str
-    icon_code_point: int
-    color_value: int
     budget: Optional[float] = 0
     expense: Optional[float] = 0
 

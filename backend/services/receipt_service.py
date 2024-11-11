@@ -5,7 +5,6 @@ import io
 import re
 from fastapi import UploadFile
 from config.config import settings
-from models.receipt import ReceiptItem
 from sqlalchemy.orm import Session
 from schemas.receipt_schema import ItemDetails, ReceiptResponse
 from typing import List
@@ -89,35 +88,24 @@ def extract_items_from_image(base64_image: str) -> List[ItemDetails]:
     return items
 
 
-async def process_receipt(file: UploadFile, db: Session) -> ReceiptResponse:
+async def process_receipt(file: UploadFile) -> ReceiptResponse:
     """Processes the receipt image and extracts items, saving them to the database."""
     image = Image.open(io.BytesIO(await file.read()))
     base64_image = encode_image(image)
 
     extracted_items = extract_items_from_image(base64_image)
-    saved_items = []
+    items = []
 
+    # Prepare response without saving to the database
     for item in extracted_items:
-        receipt_item = ReceiptItem(
-            item_name=item.item_name,
-            category=item.category,
-            price=item.price,
-            quantity=item.quantity,
-        )
-        db.add(receipt_item)
-        db.flush()  # Flush to get the ID from the database
-        db.refresh(receipt_item)  # Refresh to populate receipt_item with the ID
-
-        saved_items.append(
+        items.append(
             ItemDetails(
-                id=receipt_item.id,
-                item_name=receipt_item.item_name,
-                category=receipt_item.category,
-                price=receipt_item.price,
-                quantity=receipt_item.quantity,
+                id=None,  # No ID since we're not saving to the database
+                item_name=item.item_name,
+                category=item.category,
+                price=item.price,
             )
         )
 
-    db.commit()
-
-    return ReceiptResponse(items=saved_items)
+    # Return the list of items as the response
+    return ReceiptResponse(items=items)

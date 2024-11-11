@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Union
+from typing import List, Union, Optional
 
 
 class BaseResponse(BaseModel):
@@ -8,19 +8,21 @@ class BaseResponse(BaseModel):
 
 
 class CategoryCreate(BaseModel):
-    """Schema for creating a new category."""
-
-    category_name: str
+    name: str
+    icon_code_point: int
+    color_value: int
+    budget: Optional[float] = 0
+    expense: Optional[float] = 0
 
 
 class CategoryDetails(BaseModel):
-    """Schema for the individual category details."""
-
-    category_id: int
-    category_name: str
+    id: int
+    name: str
+    icon_code_point: int
+    color_value: int
+    budget: Optional[float] = 0
+    expense: Optional[float] = 0
 
 
 class CategoryResponse(BaseResponse):
-    """Schema for response that includes category details or a list of categories."""
-
     data: Union[CategoryDetails, List[CategoryDetails]]

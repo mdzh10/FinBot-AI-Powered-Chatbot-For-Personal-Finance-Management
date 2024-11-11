@@ -38,7 +38,7 @@ async def update_account_details(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/delete/{account_id}", response_model=AccountResponse)
+@router.delete("/delete/{account_id}")
 async def delete_account_endpoint(account_id: int, db: Session = Depends(get_db)):
     try:
         return await delete_account(db, account_id)

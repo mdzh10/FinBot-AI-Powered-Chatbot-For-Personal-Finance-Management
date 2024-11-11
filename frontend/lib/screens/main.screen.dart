@@ -39,7 +39,7 @@ class _MainScreenState extends State<MainScreen>{
             children: [
               HomeScreen(cubit.state.userId),
               AccountsScreen(cubit.state.userId),
-              // CategoriesScreen(),
+              CategoriesScreen(cubit.state.userId),
               // SettingsScreen()
             ],
             onPageChanged: (int index){

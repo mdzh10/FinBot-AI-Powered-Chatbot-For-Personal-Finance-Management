@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from models.transaction import Transaction, PaymentTypeEnum
+from models.account import Account
 from schemas.transaction_schema import (
     TransactionListResponse,
     TransactionCreate,
@@ -41,6 +42,7 @@ async def get_all_transactions(db: Session, user_id: int) -> TransactionListResp
 async def add_transaction(
     db: Session, transaction: TransactionCreate
 ) -> TransactionListResponse:
+    # Find the associated account for this transaction
     new_transaction = Transaction(
         user_id=transaction.user_id,
         account_id=transaction.account_id,
@@ -56,8 +58,25 @@ async def add_transaction(
         datetime=transaction.datetime,
     )
     db.add(new_transaction)
+
+    # Find the associated account
+    account = db.query(Account).filter(Account.id == new_transaction.account_id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    # Update the account balance based on transaction type
+    if new_transaction.type == PaymentTypeEnum.credit:
+        account.balance += new_transaction.amount
+        account.credit += new_transaction.amount  # Track total credits
+    elif new_transaction.type == PaymentTypeEnum.debit:
+        if account.balance < new_transaction.amount:
+            raise HTTPException(status_code=400, detail="Insufficient balance")
+        account.balance -= new_transaction.amount
+        account.debit += new_transaction.amount  # Track total debits
+
     db.commit()
     db.refresh(new_transaction)
+    db.refresh(account)
 
     return TransactionListResponse(
         msg="Transaction Created successfully",
@@ -80,14 +99,33 @@ async def add_transaction(
 async def update_transaction(
     db: Session, transaction: TransactionDetails
 ) -> TransactionListResponse:
+    # Fetch the existing transaction
     existing_transaction = (
         db.query(Transaction).filter(Transaction.id == transaction.id).first()
     )
-
     if not existing_transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-# Update only the fields provided in transaction_data
+    # Fetch the associated account
+    account = (
+        db.query(Account).filter(Account.id == existing_transaction.account_id).first()
+    )
+    if not account:
+        raise HTTPException(status_code=404, detail="Associated account not found")
+
+    # Store original transaction amount and type
+    original_amount = existing_transaction.amount
+    original_type = existing_transaction.type
+
+    # Adjust account balance based on the original transaction type
+    if original_type == PaymentTypeEnum.credit:
+        account.balance -= original_amount  # Remove original credit
+        account.credit -= original_amount
+    elif original_type == PaymentTypeEnum.debit:
+        account.balance += original_amount  # Remove original debit
+        account.debit -= original_amount
+
+    # Now apply the updated transaction values
     if transaction.account_id is not None:
         existing_transaction.account_id = transaction.account_id
     if transaction.category_id is not None:
@@ -99,12 +137,26 @@ async def update_transaction(
     if transaction.amount is not None:
         existing_transaction.amount = transaction.amount
     if transaction.type is not None:
-        existing_transaction.type = transaction.type
+        existing_transaction.type = PaymentTypeEnum[transaction.type]
     if transaction.datetime is not None:
         existing_transaction.datetime = transaction.datetime
 
+    # Adjust the account balance based on the updated transaction
+    if existing_transaction.type == PaymentTypeEnum.credit:
+        account.balance += existing_transaction.amount
+        account.credit += existing_transaction.amount
+    elif existing_transaction.type == PaymentTypeEnum.debit:
+        if account.balance < existing_transaction.amount:
+            raise HTTPException(
+                status_code=400, detail="Insufficient balance, Update failed"
+            )
+        account.balance -= existing_transaction.amount
+        account.debit += existing_transaction.amount
+
+    # Commit changes to both the transaction and the account
     db.commit()
     db.refresh(existing_transaction)
+    db.refresh(account)
 
     return TransactionListResponse(
         msg="Transaction Updated Successfully",
@@ -129,6 +181,23 @@ async def delete_transaction_by_id(db: Session, transaction_id: int) -> bool:
     if not transaction:
         return False
 
+    # Fetch the associated account
+    account = db.query(Account).filter(Account.id == transaction.account_id).first()
+
+    # Store original transaction amount and type
+    original_amount = transaction.amount
+    original_type = transaction.type
+
+    # Adjust account balance based on the original transaction type
+    if original_type == PaymentTypeEnum.credit:
+        account.balance -= original_amount  # Remove original credit
+        account.credit -= original_amount
+    elif original_type == PaymentTypeEnum.debit:
+        account.balance += original_amount  # Remove original debit
+        account.debit -= original_amount
+
     db.delete(transaction)
     db.commit()
+    db.refresh(account)
+
     return True

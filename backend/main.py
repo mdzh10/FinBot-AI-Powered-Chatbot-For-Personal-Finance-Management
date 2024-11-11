@@ -23,11 +23,11 @@ app.add_middleware(
 # Include authentication router
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])
-app.include_router(txn_router, prefix="/transaction", tags=["Transaction"])
 app.include_router(acc_router, prefix="/account", tags=["Account"])
+app.include_router(category_router, prefix="/category", tags=["Category"])
+app.include_router(txn_router, prefix="/transaction", tags=["Transaction"])
 app.include_router(receipt_router, prefix="/receipt", tags=["Receipt"])
 app.include_router(report_router, prefix="/report", tags=["Report"])
-app.include_router(category_router, prefix="/category", tags=["Category"])
 
 
 @app.on_event("startup")

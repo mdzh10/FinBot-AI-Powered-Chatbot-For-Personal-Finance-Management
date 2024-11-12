@@ -19,6 +19,7 @@ class AccountCreate(BaseModel):
 
 class AccountDetails(BaseModel):
     id: int
+    user_id: Optional[int] = None
     account_type: Optional[AccountTypeEnum] = None
     bank_name: Optional[str] = None
     account_name: Optional[str] = None
@@ -31,5 +32,4 @@ class AccountDetails(BaseModel):
 class AccountResponse(BaseModel):
     isSuccess: bool = True
     msg: str = "Account fetched successfully"
-    user_id: int
     account: Optional[List[AccountDetails]] = None  # Make account optional

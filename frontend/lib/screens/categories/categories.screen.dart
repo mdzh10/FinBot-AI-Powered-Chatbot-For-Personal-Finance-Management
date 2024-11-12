@@ -55,7 +55,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   void loadData() async {
 
-    final String apiUrl = "http://192.168.1.33:8000/category/";
+    final String apiUrl = "http://192.168.1.33:8000/category/"+widget.userId.toString();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},
@@ -108,7 +108,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               onTap: () {
                 showDialog(
                   context: context,
-                  builder: (builder) => CategoryForm(category: category),
+                  builder: (builder) => CategoryForm(category: category, userId: widget.userId),
                 );
               },
               leading: CircleAvatar(
@@ -154,7 +154,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: (){
-            showDialog(context: context, builder: (builder)=>const CategoryForm());
+            showDialog(context: context, builder: (builder)=>CategoryForm(userId: widget.userId));
           },
           child: const Icon(Icons.add),
         )

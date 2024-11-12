@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import '../../data/icons.dart';
+
 import '../../models/category.model.dart';
 import '../buttons/button.dart';
 import '../currency.dart';
@@ -11,46 +11,39 @@ typedef Callback = void Function();
 class CategoryForm extends StatefulWidget {
   final Category? category;
   final Callback? onSave;
+  final int? userId;
 
-  const CategoryForm({super.key, this.category, this.onSave});
+  const CategoryForm({super.key, this.category, this.onSave, this.userId});
 
   @override
   State<StatefulWidget> createState() => _CategoryForm();
 }
 class _CategoryForm extends State<CategoryForm>{
-  // final CategoryDao _categoryDao = CategoryDao();
-  final TextEditingController _nameController = TextEditingController();
-  Category _category = Category(name: "");
+  Category? _category;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    if(widget.category != null){
-      _nameController.text = widget.category!.name;
-      _category = widget.category??Category(name: "");
-    }
-  }
-
-  void onSave (context) async{
 
     if (widget.category != null) {
       _category = Category(
         id: widget.category!.id,
-        // userId: widget.userId,
+        userId: widget.userId,
         name: widget.category!.name,
         budget: widget.category!.budget,
         expense: widget.category!.expense,
       );
     } else {
       _category = Category(
-        // userId: widget.userId,
-        name: "",
-        budget: 0
+          userId: widget.userId,
+          name: "",
+          budget: 0
       );
     }
+  }
 
-
+  void onSave (context) async{
     setState(() {
       _isSaving = true; // Show loading indicator
     });
@@ -60,11 +53,15 @@ class _CategoryForm extends State<CategoryForm>{
           ? Uri.parse('http://192.168.1.33:8000/category/create')
           : Uri.parse('http://192.168.1.33:8000/category/update');
 
-      final response = await http.post(
+      final response = _category?.id == null ? await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(_category?.toJson()),
-      );
+      ) : await http.put(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(_category?.toJson()));
+
 
       if (response.statusCode == 200) {
         print("Category saved successfully: ${jsonDecode(response.body)}");
@@ -84,13 +81,6 @@ class _CategoryForm extends State<CategoryForm>{
         _isSaving = false; // Hide loading indicator
       });
     }
-
-    // await _categoryDao.upsert(_category);
-    if(widget.onSave != null) {
-      widget.onSave!();
-    }
-    Navigator.pop(context);
-    // globalEvent.emit("category_update");
   }
 
   void pickIcon(context)async {
@@ -98,6 +88,9 @@ class _CategoryForm extends State<CategoryForm>{
   }
   @override
   Widget build(BuildContext context) {
+    if (_category == null) {
+      return const CircularProgressIndicator();
+    }
     return  AlertDialog(
       scrollable: true,
       insetPadding: const EdgeInsets.all(10),
@@ -126,7 +119,7 @@ class _CategoryForm extends State<CategoryForm>{
                 const SizedBox(width: 15,),
                 Expanded(
                     child: TextFormField(
-                      initialValue: _category.name,
+                      initialValue: _category?.name,
                       decoration: InputDecoration(
                         labelText: 'Name',
                         hintText: 'Enter Category name',
@@ -137,7 +130,7 @@ class _CategoryForm extends State<CategoryForm>{
                       ),
                       onChanged: (String text){
                         setState(() {
-                          _category.name = text;
+                          _category?.name = text;
                         });
                       },
                     )
@@ -147,7 +140,7 @@ class _CategoryForm extends State<CategoryForm>{
             Container(
               padding: const EdgeInsets.only(top: 20),
               child: TextFormField(
-                initialValue: _category.budget == null ?"":_category.budget.toString(),
+                initialValue: _category?.budget == null ?"":_category?.budget.toString(),
                 keyboardType: TextInputType.number,
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,4}')),
@@ -164,95 +157,108 @@ class _CategoryForm extends State<CategoryForm>{
                 ),
                 onChanged: (String text){
                   setState(() {
-                    _category.budget = double.parse(text.isEmpty? "0":text);
+                    _category?.budget = double.parse(text.isEmpty? "0":text);
                   });
                 },
               ),
             ),
             const SizedBox(height: 20,),
             //Color picker
-            SizedBox(
-              height: 45,
-              width: double.infinity,
-              child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: Colors.primaries.length,
-                  itemBuilder: (BuildContext context, index)=>
-                      Container(
-                        width: 45,
-                        height: 45,
-                        padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2.5),
-                        child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                // _category.color = Colors.primaries[index];
-                              });
-                            },
-                            child:  Container(
-                              decoration: BoxDecoration(
-                                  color: Colors.primaries[index],
-                                  borderRadius: BorderRadius.circular(40),
-                                  border: Border.all(
-                                    width: 2,
-                                    color: Colors.white,
-                                  )
-                              ),
-                            )
-                        ),
-                      )
-
-              ),
-            ),
-            const SizedBox(height: 15,),
-
-            //Icon picker
-            SizedBox(
-              height: 45,
-              width: double.infinity,
-              child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: AppIcons.icons.length,
-                  itemBuilder: (BuildContext context, index)=>Container(
-                      width: 45,
-                      height: 45,
-                      padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2.5),
-                      child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              // _category.icon = AppIcons.icons[index];
-                            });
-                          },
-                          child:  Container(
-                            height: 50,
-                            width: 50,
-                            decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(40),
-                                border: Border.all(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2
-                                )
-                            ),
-                            child:Icon(AppIcons.icons[index], color: Theme.of(context).colorScheme.primary, size: 18,),
-                          )
-                      )
-                  )
-
-              ),
-            ),
+            // SizedBox(
+            //   height: 45,
+            //   width: double.infinity,
+            //   child: ListView.builder(
+            //       scrollDirection: Axis.horizontal,
+            //       itemCount: Colors.primaries.length,
+            //       itemBuilder: (BuildContext context, index)=>
+            //           Container(
+            //             width: 45,
+            //             height: 45,
+            //             padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2.5),
+            //             child: GestureDetector(
+            //                 onTap: () {
+            //                   setState(() {
+            //                     // _category.color = Colors.primaries[index];
+            //                   });
+            //                 },
+            //                 child:  Container(
+            //                   decoration: BoxDecoration(
+            //                       color: Colors.primaries[index],
+            //                       borderRadius: BorderRadius.circular(40),
+            //                       border: Border.all(
+            //                         width: 2,
+            //                         color: Colors.white,
+            //                       )
+            //                   ),
+            //                 )
+            //             ),
+            //           )
+            //
+            //   ),
+            // ),
+            // const SizedBox(height: 15,),
+            //
+            // //Icon picker
+            // SizedBox(
+            //   height: 45,
+            //   width: double.infinity,
+            //   child: ListView.builder(
+            //       scrollDirection: Axis.horizontal,
+            //       itemCount: AppIcons.icons.length,
+            //       itemBuilder: (BuildContext context, index)=>Container(
+            //           width: 45,
+            //           height: 45,
+            //           padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2.5),
+            //           child: GestureDetector(
+            //               onTap: () {
+            //                 setState(() {
+            //                   // _category.icon = AppIcons.icons[index];
+            //                 });
+            //               },
+            //               child:  Container(
+            //                 height: 50,
+            //                 width: 50,
+            //                 decoration: BoxDecoration(
+            //                     color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            //                     borderRadius: BorderRadius.circular(40),
+            //                     border: Border.all(
+            //                         color: Theme.of(context).colorScheme.primary,
+            //                         width: 2
+            //                     )
+            //                 ),
+            //                 child:Icon(AppIcons.icons[index], color: Theme.of(context).colorScheme.primary, size: 18,),
+            //               )
+            //           )
+            //       )
+            //
+            //   ),
+            // ),
           ],
         ),
       ),
       actions: [
-        AppButton(
-          height: 45,
-          isFullWidth: true,
-          onPressed: (){
-            onSave(context);
-          },
-          color: Theme.of(context).colorScheme.primary,
-          label: "Save",
-        )
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            AppButton(
+              height: 45,
+              isFullWidth: true,
+              onPressed: _isSaving
+                  ? null // Disable button when saving
+                  : () {
+                onSave(context);
+              },
+              color: Theme.of(context).colorScheme.primary,
+              label: "Save",
+            ),
+            if (_isSaving) // Show loading indicator when saving
+              Positioned(
+                child: CircularProgressIndicator(
+                  color: Colors.white, // Optional: change color for visibility
+                ),
+              ),
+          ],
+        ),
       ],
     );
 

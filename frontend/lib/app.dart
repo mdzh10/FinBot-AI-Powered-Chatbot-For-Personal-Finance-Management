@@ -17,7 +17,7 @@ class App extends StatelessWidget {
     return  BlocBuilder<AppCubit, AppState>(
         builder: (context, state){
           return MaterialApp(
-            title: 'Fintracker',
+            title: 'Finbot',
             theme: ThemeData(
                 useMaterial3: true,
                 brightness: MediaQuery.of(context).platformBrightness,

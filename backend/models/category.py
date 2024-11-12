@@ -11,8 +11,8 @@ class Category(Base):
     
     # Category details
     name = Column(String, nullable=False)
-    budget = Column(Float, nullable=True, default=0)
-    expense = Column(Float, nullable=True, default=0)
+    budget = Column(Float, nullable=False, default=0.0)
+    expense = Column(Float, nullable=False, default=0.0)
 
     # Relationship to Transaction (one-to-many)
     transactions = relationship(

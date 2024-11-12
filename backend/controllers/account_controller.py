@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from config.db.database import get_db
@@ -17,6 +18,7 @@ async def get_accounts(user_id: int, db: Session = Depends(get_db)):
     try:
         return await get_all_accounts(db, user_id)
     except Exception as e:
+        logging.error(f"An error occurred: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -25,6 +27,7 @@ async def create_account(account_data: AccountCreate, db: Session = Depends(get_
     try:
         return await add_new_account(db, account_data)
     except Exception as e:
+        logging.error(f"An error occurred: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -35,6 +38,7 @@ async def update_account_details(
     try:
         return await update_account(db, account_data)
     except Exception as e:
+        logging.error(f"An error occurred: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -43,4 +47,5 @@ async def delete_account_endpoint(account_id: int, db: Session = Depends(get_db)
     try:
         return await delete_account(db, account_id)
     except Exception as e:
+        logging.error(f"An error occurred: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))

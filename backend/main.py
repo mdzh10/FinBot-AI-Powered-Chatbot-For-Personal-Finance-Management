@@ -1,3 +1,4 @@
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config.db.database import database, create_tables
@@ -9,6 +10,16 @@ from controllers.receipt_controller import router as receipt_router
 from controllers.visualization_controller import router as report_router
 from controllers.category_controller import router as category_router
 import models
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)  # Set to DEBUG for more detailed logs
+logger = logging.getLogger("uvicorn.error")  # Ensures errors are captured by Uvicorn
+
+# Configure SQLAlchemy to log SQL statements and errors
+logging.basicConfig()
+logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)  # Logs SQL statements
+logging.getLogger("sqlalchemy.pool").setLevel(logging.INFO)    # Logs connection pool issues
+logging.getLogger("sqlalchemy.dialects").setLevel(logging.INFO)  # Logs dialect-specific issues
 
 app = FastAPI()
 # Add the CORS middleware

@@ -17,6 +17,7 @@ async def get_all_accounts(db: Session, user_id: int) -> AccountResponse:
     account_list = [
         AccountDetails(
             id=account.id,
+            user_id=account.user_id,
             account_type=account.account_type,
             bank_name=account.bank_name,
             account_name=account.account_name,
@@ -28,7 +29,7 @@ async def get_all_accounts(db: Session, user_id: int) -> AccountResponse:
         for account in accounts
     ]
 
-    return AccountResponse(user_id=user_id, account=account_list).dict()  # Convert to dictionary
+    return AccountResponse(account=account_list).dict()  # Convert to dictionary
 
 
 async def add_new_account(db: Session, account_data: AccountCreate):
@@ -64,10 +65,10 @@ async def add_new_account(db: Session, account_data: AccountCreate):
 
     return AccountResponse(
         msg="Account Created successfully",
-        user_id=new_account.user_id,
         account=[
             AccountDetails(
                 id=new_account.id,
+                user_id=new_account.user_id,
                 account_type=new_account.account_type,
                 bank_name=new_account.bank_name,
                 account_name=new_account.account_name,
@@ -107,10 +108,10 @@ async def update_account(db: Session, account_data: AccountDetails):
 
     return AccountResponse(
         msg="Account Updated successfully",
-        user_id=account.user_id,
         account=[
             AccountDetails(
                 id=account.id,
+                user_id=account.user_id,
                 account_type=account.account_type,
                 bank_name=account.bank_name,
                 account_name=account.account_name,

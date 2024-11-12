@@ -10,6 +10,7 @@ class CategoryCreate(BaseModel):
 
 class CategoryDetails(BaseModel):
     id: int
+    user_id: Optional[int] = None
     name: Optional[str] = None
     budget: Optional[float] = None
     expense: Optional[float] = None
@@ -18,5 +19,4 @@ class CategoryDetails(BaseModel):
 class CategoryResponse(BaseModel):
     isSuccess: bool = True
     msg: str = "Operation successful"
-    user_id: int
     data: Optional[List[CategoryDetails]] = None

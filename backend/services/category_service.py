@@ -33,10 +33,10 @@ async def create_category(db: Session, category: CategoryCreate) -> CategoryResp
     return CategoryResponse(
         isSuccess=True,
         msg="Category created successfully",
-        user_id=category.user_id,
         data=[
             CategoryDetails(
                 id=new_category.id,
+                user_id=category.user_id,
                 name=new_category.name,
                 budget=new_category.budget,
                 expense=new_category.expense,
@@ -54,6 +54,7 @@ async def get_all_categories(db: Session, user_id: int) -> CategoryResponse:
     category_list = [
         CategoryDetails(
             id=cat.id,
+            user_id=cat.user_id,
             name=cat.name,
             budget=cat.budget,
             expense=cat.expense,
@@ -64,7 +65,6 @@ async def get_all_categories(db: Session, user_id: int) -> CategoryResponse:
     return CategoryResponse(
         isSuccess=True,
         msg="Categories fetched successfully",
-        user_id=user_id,
         data=category_list,
     )
 
@@ -86,10 +86,10 @@ async def get_category_by_id(
     return CategoryResponse(
         isSuccess=True,
         msg="Category fetched successfully",
-        user_id=user_id,
         data=[
             CategoryDetails(
                 id=category.id,
+                user_id=user_id,
                 name=category.name,
                 budget=category.budget,
                 expense=category.expense,
@@ -120,10 +120,10 @@ async def modify_category(db: Session, category: CategoryDetails) -> CategoryRes
     return CategoryResponse(
         isSuccess=True,
         msg="Category updated successfully",
-        user_id=existing_category.user_id,
         data=[
             CategoryDetails(
                 id=existing_category.id,
+                user_id=existing_category.user_id,
                 name=existing_category.name,
                 budget=existing_category.budget,
                 expense=existing_category.expense,

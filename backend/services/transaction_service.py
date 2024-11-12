@@ -21,6 +21,7 @@ async def get_all_transactions(db: Session, user_id: int) -> TransactionListResp
     transaction_list = [
         TransactionDetails(
             id=transaction.id,
+            user_id=user_id,
             account_id=transaction.account_id,
             category_id=transaction.category_id,
             title=transaction.title,
@@ -35,7 +36,6 @@ async def get_all_transactions(db: Session, user_id: int) -> TransactionListResp
     return TransactionListResponse(
         isSuccess=True,
         msg="Transactions fetched successfully",
-        user_id=user_id,
         transactions=transaction_list,
     )
 
@@ -86,10 +86,10 @@ async def add_transaction(
 
     return TransactionListResponse(
         msg="Transaction Created successfully",
-        user_id=new_transaction.user_id,
         transactions=[
             TransactionDetails(
                 id=new_transaction.id,
+                user_id=new_transaction.user_id,
                 account_id=new_transaction.account_id,
                 category_id=new_transaction.category_id,
                 title=new_transaction.title,
@@ -174,10 +174,10 @@ async def update_transaction(
 
     return TransactionListResponse(
         msg="Transaction Updated Successfully",
-        user_id=existing_transaction.user_id,
         transactions=[
             TransactionDetails(
                 id=existing_transaction.id,
+                user_id=existing_transaction.user_id,
                 account_id=existing_transaction.account_id,
                 category_id=existing_transaction.category_id,
                 title=existing_transaction.title,

@@ -15,11 +15,6 @@ import models
 logging.basicConfig(level=logging.INFO)  # Set to DEBUG for more detailed logs
 logger = logging.getLogger("uvicorn.error")  # Ensures errors are captured by Uvicorn
 
-# Configure SQLAlchemy to log SQL statements and errors
-logging.basicConfig()
-logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)  # Logs SQL statements
-logging.getLogger("sqlalchemy.pool").setLevel(logging.INFO)    # Logs connection pool issues
-logging.getLogger("sqlalchemy.dialects").setLevel(logging.INFO)  # Logs dialect-specific issues
 
 app = FastAPI()
 # Add the CORS middleware

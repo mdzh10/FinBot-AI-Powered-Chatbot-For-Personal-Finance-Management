@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from config.db.database import get_db
@@ -10,7 +10,6 @@ from services.category_service import (
     delete_category,
 )
 from schemas.category_schema import (
-    BaseResponse,
     CategoryCreate,
     CategoryDetails,
     CategoryResponse,
@@ -29,15 +28,15 @@ async def add_category(category: CategoryCreate, db: Session = Depends(get_db)):
 
 
 # Get Category or All Categories
-@router.get("/", response_model=CategoryResponse, operation_id="get_category_or_all")
+@router.get("/{user_id}", response_model=CategoryResponse, operation_id="get_category_or_all")
 async def get_categories(
-    category_id: Optional[int] = None, db: Session = Depends(get_db)
+    user_id: int, category_id: Optional[int] = None, db: Session = Depends(get_db)
 ):
     try:
         if category_id is not None:
-            return await get_category_by_id(db, category_id)
+            return await get_category_by_id(db, category_id, user_id)
         elif category_id is None:
-            return await get_all_categories(db)
+            return await get_all_categories(db, user_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -55,10 +54,10 @@ async def update_category(category: CategoryDetails, db: Session = Depends(get_d
 
 # Delete Category
 @router.delete(
-    "/delete/{category_id}", response_model=BaseResponse, operation_id="delete_category"
+    "/delete/{category_id}", operation_id="delete_category"
 )
 async def remove_category(category_id: int, db: Session = Depends(get_db)):
     success = await delete_category(db, category_id)
     if not success:
         raise HTTPException(status_code=404, detail="Category not found")
-    return BaseResponse(msg="Category deleted successfully")
+    return {"isSuccess": True, "msg": "Category deleted successfully"}

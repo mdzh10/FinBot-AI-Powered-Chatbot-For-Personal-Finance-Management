@@ -13,7 +13,7 @@ class Account(Base):
     __tablename__ = "accounts"
 
     # Primary key for Account
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     # Foreign key relationship with User (assuming there's a User table)
     user_id = Column(
         Integer, ForeignKey("users.user_id"), nullable=False
@@ -24,9 +24,9 @@ class Account(Base):
     bank_name = Column(String, nullable=True)  # Only applicable for bank accounts
     account_name = Column(String, nullable=False)  # e.g., 'John Doe Checking'
     account_number = Column(Integer, nullable=True)  # Bank account number
-    credit = Column(Float, default=0.0)
-    debit = Column(Float, default=0.0)
-    balance = Column(Float, default=0.0)  # Current balance of the account
+    credit = Column(Float, default=0.0, nullable=False)
+    debit = Column(Float, default=0.0, nullable=False)
+    balance = Column(Float, default=0.0, nullable=False)  # Current balance of the account
 
     # Relationship to User
     user = relationship("User", back_populates="accounts")

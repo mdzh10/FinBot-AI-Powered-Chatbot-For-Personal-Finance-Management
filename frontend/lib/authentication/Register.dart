@@ -34,7 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _message = null;
     });
 
-    const url = 'http://192.168.160.192:8000/auth/signup';
+    const url = 'http://192.168.1.33:8000/auth/signup';
 
     try {
       final response = await http.post(

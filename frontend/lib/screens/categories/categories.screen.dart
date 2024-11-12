@@ -55,7 +55,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   void loadData() async {
 
-    final String apiUrl = "http://192.168.160.192:8000/category/";
+    final String apiUrl = "http://192.168.1.33:8000/category/";
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},

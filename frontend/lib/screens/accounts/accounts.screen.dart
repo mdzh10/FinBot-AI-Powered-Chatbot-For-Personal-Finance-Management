@@ -40,7 +40,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
     });
 
     final response = await http.delete(
-      Uri.parse('http://192.168.160.192:8000/account/delete/' + accountId.toString()),
+      Uri.parse('http://192.168.1.33:8000/account/delete/' + accountId.toString()),
       headers: {"Content-Type": "application/json"},
     );
 
@@ -62,7 +62,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
       _isLoading = true; // Show loading indicator
     });
 
-    final String apiUrl = "http://192.168.160.192:8000/account/" + userId.toString();
+    final String apiUrl = "http://192.168.1.33:8000/account/" + userId.toString();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},

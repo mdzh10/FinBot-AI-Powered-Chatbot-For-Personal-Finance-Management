@@ -28,13 +28,12 @@ class _AccountForm extends State<AccountForm> {
     if (widget.account != null) {
       _account = Account(
         id: widget.account!.id,
-        userId: widget.userId,
         accountName: widget.account!.accountName,
         accountNumber: widget.account!.accountNumber,
         accountType: widget.account!.accountType,
         balance: widget.account!.balance,
-        debit: widget.account!.debit,
-        credit: widget.account!.credit,
+        debit: widget.account?.debit ?? 0,
+        credit: widget.account?.credit ?? 0,
       );
     } else {
       _account = Account(
@@ -54,9 +53,11 @@ class _AccountForm extends State<AccountForm> {
 
     try {
       final url = _account?.id == null
-          ? Uri.parse('http://192.168.160.192:8000/account/create')
-          : Uri.parse('http://192.168.160.192:8000/account/update');
+          ? Uri.parse('http://192.168.1.33:8000/account/create')
+          : Uri.parse('http://192.168.1.33:8000/account/update');
+      
 
+      print(_account?.toJson());
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
@@ -197,49 +198,49 @@ class _AccountForm extends State<AccountForm> {
               },
             ),
             const SizedBox(height: 20),
-            // Visibility(
-            //   visible: _account?.id != null,
-            //   child: TextFormField(
-            //     initialValue: _account!.credit.toString(),
-            //     decoration: InputDecoration(
-            //       labelText: 'Credit',
-            //       hintText: 'Enter credit',
-            //       border: OutlineInputBorder(
-            //         borderRadius: BorderRadius.circular(15),
-            //       ),
-            //       contentPadding:
-            //       const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
-            //     ),
-            //     onChanged: (text) {
-            //       double? newCredit = double.tryParse(text);
-            //       setState(() {
-            //         _account!.credit = newCredit ?? 0;
-            //       });
-            //     },
-            //   ),
-            // ),
-            // const SizedBox(height: 20),
-            // Visibility(
-            //   visible: _account?.id != null,
-            //   child: TextFormField(
-            //     initialValue: _account!.debit.toString(),
-            //     decoration: InputDecoration(
-            //       labelText: 'Debit',
-            //       hintText: 'Enter debit',
-            //       border: OutlineInputBorder(
-            //         borderRadius: BorderRadius.circular(15),
-            //       ),
-            //       contentPadding:
-            //       const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
-            //     ),
-            //     onChanged: (text) {
-            //       double? newDebit = double.tryParse(text);
-            //       setState(() {
-            //         _account!.debit = newDebit ?? 0;
-            //       });
-            //     },
-            //   ),
-            // ),
+            Visibility(
+              visible: _account?.id != null,
+              child: TextFormField(
+                initialValue: _account!.credit.toString(),
+                decoration: InputDecoration(
+                  labelText: 'Credit',
+                  hintText: 'Enter credit',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  contentPadding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                ),
+                onChanged: (text) {
+                  double? newCredit = double.tryParse(text);
+                  setState(() {
+                    _account!.credit = newCredit ?? 0;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+            Visibility(
+              visible: _account?.id != null,
+              child: TextFormField(
+                initialValue: _account!.debit.toString(),
+                decoration: InputDecoration(
+                  labelText: 'Debit',
+                  hintText: 'Enter debit',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  contentPadding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                ),
+                onChanged: (text) {
+                  double? newDebit = double.tryParse(text);
+                  setState(() {
+                    _account!.debit = newDebit ?? 0;
+                  });
+                },
+              ),
+            ),
           ],
         ),
       ),

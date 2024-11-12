@@ -57,8 +57,8 @@ class _CategoryForm extends State<CategoryForm>{
 
     try {
       final url = _category?.id == null
-          ? Uri.parse('http://192.168.160.192:8000/category/create')
-          : Uri.parse('http://192.168.160.192:8000/category/update');
+          ? Uri.parse('http://192.168.1.33:8000/category/create')
+          : Uri.parse('http://192.168.1.33:8000/category/update');
 
       final response = await http.post(
         url,

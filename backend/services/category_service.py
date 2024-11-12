@@ -6,39 +6,51 @@ from schemas.category_schema import CategoryCreate, CategoryDetails, CategoryRes
 
 # Create Category
 async def create_category(db: Session, category: CategoryCreate) -> CategoryResponse:
-    # Check if a category with the same name already exists
+    # Check if a category with the same name for the user already exists
     existing_category = (
-        db.query(Category).filter(Category.name == category.name).first()
+        db.query(Category)
+        .filter(Category.name == category.name, Category.user_id == category.user_id)
+        .first()
     )
     if existing_category:
         raise HTTPException(
-            status_code=400, detail="Category with this name already exists"
+            status_code=400,
+            detail="Category with this name already exists for the user",
         )
 
+    # Create and add the new category to the database
     new_category = Category(
+        user_id=category.user_id,
         name=category.name,
         budget=category.budget,
-        expense=category.expense,
+        expense=0.0,  # Initialize expense to 0 if not provided
     )
     db.add(new_category)
     db.commit()
     db.refresh(new_category)
 
+    # Prepare the response
     return CategoryResponse(
         isSuccess=True,
         msg="Category created successfully",
-        data=CategoryDetails(
-            id=new_category.id,
-            name=new_category.name,
-            budget=new_category.budget,
-            expense=new_category.expense,
-        ),
+        user_id=category.user_id,
+        data=[
+            CategoryDetails(
+                id=new_category.id,
+                name=new_category.name,
+                budget=new_category.budget,
+                expense=new_category.expense,
+            )
+        ],
     )
 
 
-# Get All Categories
-async def get_all_categories(db: Session) -> CategoryResponse:
-    categories = db.query(Category).all()
+# Get All Categories for a User
+async def get_all_categories(db: Session, user_id: int) -> CategoryResponse:
+    # Fetch all categories for a specific user
+    categories = db.query(Category).filter(Category.user_id == user_id).all()
+
+    # Prepare the list of categories
     category_list = [
         CategoryDetails(
             id=cat.id,
@@ -48,61 +60,87 @@ async def get_all_categories(db: Session) -> CategoryResponse:
         )
         for cat in categories
     ]
-    return CategoryResponse(
-        isSuccess=True, msg="Categories fetched successfully", data=category_list
-    )
-
-
-# Get Category by ID
-async def get_category_by_id(db: Session, category_id: int) -> CategoryResponse:
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
 
     return CategoryResponse(
         isSuccess=True,
+        msg="Categories fetched successfully",
+        user_id=user_id,
+        data=category_list,
+    )
+
+
+# Get Category by ID for a User
+async def get_category_by_id(
+    db: Session, category_id: int, user_id: int
+) -> CategoryResponse:
+    # Fetch the specific category by ID and user ID
+    category = (
+        db.query(Category)
+        .filter(Category.id == category_id, Category.user_id == user_id)
+        .first()
+    )
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    # Prepare the response with a single category
+    return CategoryResponse(
+        isSuccess=True,
         msg="Category fetched successfully",
-        data=CategoryDetails(
-            id=category.id,
-            name=category.name,
-            budget=category.budget,
-            expense=category.expense,
-        ),
+        user_id=user_id,
+        data=[
+            CategoryDetails(
+                id=category.id,
+                name=category.name,
+                budget=category.budget,
+                expense=category.expense,
+            )
+        ],
     )
 
 
 # Modify Category
 async def modify_category(db: Session, category: CategoryDetails) -> CategoryResponse:
-    existing_category = (
-        db.query(Category).filter(Category.id == category.id).first()
-    )
+    # Find the existing category by ID and user ID
+    existing_category = db.query(Category).filter(Category.id == category.id).first()
     if not existing_category:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    existing_category.name = category.name
-    existing_category.budget = category.budget
-    existing_category.expense = category.expense
+    # Update the category fields
+    if category.name is not None:
+        existing_category.name = category.name
+    if category.budget is not None:
+        existing_category.budget = category.budget
+    if category.expense is not None:
+        existing_category.expense = category.expense
 
     db.commit()
     db.refresh(existing_category)
 
+    # Prepare the response
     return CategoryResponse(
         isSuccess=True,
         msg="Category updated successfully",
-        data=CategoryDetails(
-            id=existing_category.id,
-            name=existing_category.name,
-            budget=existing_category.budget,
-            expense=existing_category.expense,
-        ),
+        user_id=existing_category.user_id,
+        data=[
+            CategoryDetails(
+                id=existing_category.id,
+                name=existing_category.name,
+                budget=existing_category.budget,
+                expense=existing_category.expense,
+            )
+        ],
     )
 
 
 # Delete Category
-async def delete_category(db: Session, category_id: int) -> bool:
+async def delete_category(db: Session, category_id: int) -> CategoryResponse:
+    # Find the category by ID and user ID
     existing_category = db.query(Category).filter(Category.id == category_id).first()
-    if existing_category:
-        db.delete(existing_category)
-        db.commit()
-        return True
-    return False
+    if not existing_category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    # Delete the category
+    db.delete(existing_category)
+    db.commit()
+
+    return True

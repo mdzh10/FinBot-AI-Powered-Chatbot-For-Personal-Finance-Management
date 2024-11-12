@@ -1,24 +1,22 @@
 from pydantic import BaseModel
-from typing import List, Union, Optional
-
-
-class BaseResponse(BaseModel):
-    isSuccess: bool = True
-    msg: str = "Operation successful"
+from typing import List, Optional
 
 
 class CategoryCreate(BaseModel):
+    user_id: int
     name: str
-    budget: Optional[float] = 0
-    expense: Optional[float] = 0
+    budget: Optional[float] = None
 
 
 class CategoryDetails(BaseModel):
     id: int
-    name: str
-    budget: Optional[float] = 0
-    expense: Optional[float] = 0
+    name: Optional[str] = None
+    budget: Optional[float] = None
+    expense: Optional[float] = None
 
 
-class CategoryResponse(BaseResponse):
-    data: Union[CategoryDetails, List[CategoryDetails]]
+class CategoryResponse(BaseModel):
+    isSuccess: bool = True
+    msg: str = "Operation successful"
+    user_id: int
+    data: Optional[List[CategoryDetails]] = None

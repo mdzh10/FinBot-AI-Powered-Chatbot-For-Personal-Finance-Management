@@ -13,7 +13,7 @@ class Account(Base):
     __tablename__ = "accounts"
 
     # Primary key for Account
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     # Foreign key relationship with User (assuming there's a User table)
     user_id = Column(
         Integer, ForeignKey("users.user_id"), nullable=False

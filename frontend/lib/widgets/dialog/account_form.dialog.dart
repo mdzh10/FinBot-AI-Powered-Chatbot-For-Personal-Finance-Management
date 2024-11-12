@@ -42,9 +42,7 @@ class _AccountForm extends State<AccountForm> {
         accountName: "",
         accountNumber: 0,
         accountType: AccountType.bank,
-        debit: 0,
         balance: 0,
-        credit: 0,
       );
     }
   }
@@ -56,8 +54,8 @@ class _AccountForm extends State<AccountForm> {
 
     try {
       final url = _account?.id == null
-          ? Uri.parse('http://192.168.1.34:8000/account/create')
-          : Uri.parse('http://192.168.1.34:8000/account/update');
+          ? Uri.parse('http://192.168.160.192:8000/account/create')
+          : Uri.parse('http://192.168.160.192:8000/account/update');
 
       final response = await http.post(
         url,
@@ -199,43 +197,49 @@ class _AccountForm extends State<AccountForm> {
               },
             ),
             const SizedBox(height: 20),
-            TextFormField(
-              initialValue: _account!.credit.toString(),
-              decoration: InputDecoration(
-                labelText: 'Credit',
-                hintText: 'Enter credit',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
-              ),
-              onChanged: (text) {
-                double? newCredit = double.tryParse(text);
-                setState(() {
-                  _account!.credit = newCredit ?? 0;
-                });
-              },
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              initialValue: _account!.debit.toString(),
-              decoration: InputDecoration(
-                labelText: 'Debit',
-                hintText: 'Enter debit',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
-              ),
-              onChanged: (text) {
-                double? newDebit = double.tryParse(text);
-                setState(() {
-                  _account!.debit = newDebit ?? 0;
-                });
-              },
-            ),
+            // Visibility(
+            //   visible: _account?.id != null,
+            //   child: TextFormField(
+            //     initialValue: _account!.credit.toString(),
+            //     decoration: InputDecoration(
+            //       labelText: 'Credit',
+            //       hintText: 'Enter credit',
+            //       border: OutlineInputBorder(
+            //         borderRadius: BorderRadius.circular(15),
+            //       ),
+            //       contentPadding:
+            //       const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+            //     ),
+            //     onChanged: (text) {
+            //       double? newCredit = double.tryParse(text);
+            //       setState(() {
+            //         _account!.credit = newCredit ?? 0;
+            //       });
+            //     },
+            //   ),
+            // ),
+            // const SizedBox(height: 20),
+            // Visibility(
+            //   visible: _account?.id != null,
+            //   child: TextFormField(
+            //     initialValue: _account!.debit.toString(),
+            //     decoration: InputDecoration(
+            //       labelText: 'Debit',
+            //       hintText: 'Enter debit',
+            //       border: OutlineInputBorder(
+            //         borderRadius: BorderRadius.circular(15),
+            //       ),
+            //       contentPadding:
+            //       const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+            //     ),
+            //     onChanged: (text) {
+            //       double? newDebit = double.tryParse(text);
+            //       setState(() {
+            //         _account!.debit = newDebit ?? 0;
+            //       });
+            //     },
+            //   ),
+            // ),
           ],
         ),
       ),

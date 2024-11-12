@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class Category {
   int? id;
   String name;
@@ -23,8 +21,6 @@ class Category {
   Map<String, dynamic> toJson() => {
     "id": id,
     "name": name,
-    "icon": icon.codePoint,
-    "color": color.value,
     "budget": budget,
   };
 }

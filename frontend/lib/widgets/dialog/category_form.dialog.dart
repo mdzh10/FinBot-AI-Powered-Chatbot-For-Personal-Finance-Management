@@ -1,14 +1,12 @@
-import 'package:fintracker/dao/category_dao.dart';
-import 'package:fintracker/data/icons.dart';
-import 'package:fintracker/events.dart';
-import 'package:fintracker/model/category.model.dart';
-import 'package:fintracker/widgets/buttons/button.dart';
-import 'package:fintracker/widgets/currency.dart';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:http/http.dart' as http;
+import '../../data/icons.dart';
 import '../../models/category.model.dart';
 import '../buttons/button.dart';
+import '../currency.dart';
 typedef Callback = void Function();
 class CategoryForm extends StatefulWidget {
   final Category? category;
@@ -20,26 +18,79 @@ class CategoryForm extends StatefulWidget {
   State<StatefulWidget> createState() => _CategoryForm();
 }
 class _CategoryForm extends State<CategoryForm>{
-  final CategoryDao _categoryDao = CategoryDao();
+  // final CategoryDao _categoryDao = CategoryDao();
   final TextEditingController _nameController = TextEditingController();
-  Category _category = Category(name: "", icon: Icons.wallet_outlined, color: Colors.pink);
+  Category _category = Category(name: "");
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     if(widget.category != null){
       _nameController.text = widget.category!.name;
-      _category = widget.category??Category(name: "", icon: Icons.wallet_outlined, color: Colors.pink);
+      _category = widget.category??Category(name: "");
     }
   }
 
   void onSave (context) async{
-    await _categoryDao.upsert(_category);
+
+    if (widget.category != null) {
+      _category = Category(
+        id: widget.category!.id,
+        // userId: widget.userId,
+        name: widget.category!.name,
+        budget: widget.category!.budget,
+        expense: widget.category!.expense,
+      );
+    } else {
+      _category = Category(
+        // userId: widget.userId,
+        name: "",
+        budget: 0
+      );
+    }
+
+
+    setState(() {
+      _isSaving = true; // Show loading indicator
+    });
+
+    try {
+      final url = _category?.id == null
+          ? Uri.parse('http://192.168.160.192:8000/category/create')
+          : Uri.parse('http://192.168.160.192:8000/category/update');
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(_category?.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        print("Category saved successfully: ${jsonDecode(response.body)}");
+      } else {
+        print("Failed to save category: ${response.body}");
+        throw Exception("Failed to save category");
+      }
+
+      if (widget.onSave != null) {
+        widget.onSave!();
+      }
+      Navigator.pop(context);
+    } catch (e) {
+      print("Error: $e");
+    } finally {
+      setState(() {
+        _isSaving = false; // Hide loading indicator
+      });
+    }
+
+    // await _categoryDao.upsert(_category);
     if(widget.onSave != null) {
       widget.onSave!();
     }
     Navigator.pop(context);
-    globalEvent.emit("category_update");
+    // globalEvent.emit("category_update");
   }
 
   void pickIcon(context)async {
@@ -66,11 +117,11 @@ class _CategoryForm extends State<CategoryForm>{
                   height: 50,
                   width: 50,
                   decoration: BoxDecoration(
-                      color: _category.color,
+                      color: Colors.pink,
                       borderRadius: BorderRadius.circular(40)
                   ),
                   alignment: Alignment.center,
-                  child: Icon(_category.icon, color: Colors.white,),
+                  child: Icon(Icons.wallet, color: Colors.white,),
                 ),
                 const SizedBox(width: 15,),
                 Expanded(
@@ -134,7 +185,7 @@ class _CategoryForm extends State<CategoryForm>{
                         child: GestureDetector(
                             onTap: () {
                               setState(() {
-                                _category.color = Colors.primaries[index];
+                                // _category.color = Colors.primaries[index];
                               });
                             },
                             child:  Container(
@@ -143,7 +194,7 @@ class _CategoryForm extends State<CategoryForm>{
                                   borderRadius: BorderRadius.circular(40),
                                   border: Border.all(
                                     width: 2,
-                                    color: _category.color.value == Colors.primaries[index].value ? Colors.white: Colors.transparent,
+                                    color: Colors.white,
                                   )
                               ),
                             )
@@ -168,7 +219,7 @@ class _CategoryForm extends State<CategoryForm>{
                       child: GestureDetector(
                           onTap: () {
                             setState(() {
-                              _category.icon = AppIcons.icons[index];
+                              // _category.icon = AppIcons.icons[index];
                             });
                           },
                           child:  Container(
@@ -178,7 +229,7 @@ class _CategoryForm extends State<CategoryForm>{
                                 color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(40),
                                 border: Border.all(
-                                    color: _category.icon == AppIcons.icons[index] ? Theme.of(context).colorScheme.primary: Colors.transparent,
+                                    color: Theme.of(context).colorScheme.primary,
                                     width: 2
                                 )
                             ),

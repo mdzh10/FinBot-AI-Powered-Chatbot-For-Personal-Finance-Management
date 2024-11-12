@@ -28,15 +28,16 @@ class AccountsScreen extends StatefulWidget {
   @override
   State<AccountsScreen> createState() => _AccountsScreenState();
 }
+
 class _AccountsScreenState extends State<AccountsScreen> {
   EventListener? _accountEventListener;
   List<Account> _accounts = [];
   AccountResponseModel? accountResponseModel;
-  bool _isLoading = false; // Step 1: Add a loading state variable
+  bool _isLoading = false;
 
   Future<void> deleteAccount(int accountId) async {
     setState(() {
-      _isLoading = true; // Show loading indicator
+      _isLoading = true;
     });
 
     final response = await http.delete(
@@ -45,21 +46,19 @@ class _AccountsScreenState extends State<AccountsScreen> {
     );
 
     setState(() {
-      _isLoading = false; // Hide loading indicator
+      _isLoading = false;
     });
 
     if (response.statusCode == 200) {
-      // Optionally, reload data after deletion
       loadData(widget.userId);
     } else {
-      // Handle delete error
       throw Exception("Failed to delete account");
     }
   }
 
   void loadData(int? userId) async {
     setState(() {
-      _isLoading = true; // Show loading indicator
+      _isLoading = true;
     });
 
     final String apiUrl = "http://192.168.1.33:8000/account/" + userId.toString();
@@ -75,13 +74,25 @@ class _AccountsScreenState extends State<AccountsScreen> {
       throw Exception('Failed to load accounts');
     }
 
-    // Fetch accounts
     List<Account>? accounts = accountResponseModel?.accounts;
 
     setState(() {
       _accounts = accounts ?? [];
-      _isLoading = false; // Hide loading indicator
+      _isLoading = false;
     });
+  }
+
+  void _openAccountForm({Account? account}) {
+    showDialog(
+      context: context,
+      builder: (context) => AccountForm(
+        account: account,
+        userId: widget.userId,
+        onSave: () {
+          loadData(widget.userId); // Refresh accounts list after saving
+        },
+      ),
+    );
   }
 
   @override
@@ -200,15 +211,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     ),
                   ),
                   Positioned(
-                    right: 15,
-                    bottom: 40,
-                    child: Icon(
-                      Icons.account_balance_outlined,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Positioned(
                     right: 0,
                     top: 0,
                     child: IconButton(
@@ -225,6 +227,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                             offset.dy + size.height,
                             offset.dx + size.width,
                             offset.dy + size.height,
+                            // accKey.currentContext!.findRenderObject()!.semanticBounds.left,
+                            // accKey.currentContext!.findRenderObject()!.semanticBounds.top,
+                            // accKey.currentContext!.findRenderObject()!.semanticBounds.right,
+                            // accKey.currentContext!.findRenderObject()!.semanticBounds.bottom,
                           ),
                           items: [
                             PopupMenuItem<String>(
@@ -232,10 +238,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                               child: const Text('Edit'),
                               onTap: () {
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (builder) => AccountForm(account: account, userId: widget.userId),
-                                  );
+                                  _openAccountForm(account: account);
                                 });
                               },
                             ),
@@ -247,7 +250,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                   ConfirmModal.showConfirmDialog(
                                     context,
                                     title: "Are you sure?",
-                                    content: const Text("All the payments will be deleted belongs to this account"),
+                                    content: const Text("All the payments will be deleted that belong to this account"),
                                     onConfirm: () async {
                                       Navigator.pop(context);
                                       await deleteAccount(account.id!);
@@ -271,14 +274,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
             },
           ),
           if (_isLoading)
-            Center(
-              child: CircularProgressIndicator(), // Show loading indicator when `_isLoading` is true
-            ),
+            const Center(child: CircularProgressIndicator()), // Show loading indicator when `_isLoading` is true
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showDialog(context: context, builder: (builder) => AccountForm(userId: widget.userId));
+          _openAccountForm(); // Open account form for creating a new account
         },
         child: const Icon(Icons.add),
       ),

@@ -1,9 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+
 import '../../models/Account.dart';
 import '../buttons/button.dart';
+
 
 typedef Callback = void Function();
 
@@ -20,7 +22,7 @@ class AccountForm extends StatefulWidget {
 
 class _AccountForm extends State<AccountForm> {
   Account? _account;
-  bool _isSaving = false; // Loading state variable
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -46,51 +48,46 @@ class _AccountForm extends State<AccountForm> {
     }
   }
 
-  void onSave(context) async {
+  void onSave(BuildContext context) async {
     setState(() {
-      _isSaving = true; // Show loading indicator
+      _isSaving = true;
     });
 
     try {
       final url = _account?.id == null
           ? Uri.parse('http://192.168.1.33:8000/account/create')
           : Uri.parse('http://192.168.1.33:8000/account/update');
-      
 
-      final response = (_account?.id == null) ? await http.post(
+      final response = (_account?.id == null)
+          ? await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(_account?.toJson()),
-      ) :  await http.put(
-          url,
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(_account?.toJson()));
+      )
+          : await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(_account?.toJson()),
+      );
 
       if (response.statusCode == 200) {
-        print("Account saved successfully: ${jsonDecode(response.body)}");
+        widget.onSave?.call(); // Trigger callback to refresh accounts list
+        Navigator.pop(context);
       } else {
         print("Failed to save account: ${response.body}");
         throw Exception("Failed to save account");
       }
-
-      if (widget.onSave != null) {
-        widget.onSave!();
-      }
-      Navigator.pop(context);
     } catch (e) {
       print("Error: $e");
     } finally {
       setState(() {
-        _isSaving = false; // Hide loading indicator
+        _isSaving = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_account == null) {
-      return const CircularProgressIndicator();
-    }
     return AlertDialog(
       title: Text(
         widget.account != null ? "Edit Account" : "New Account",
@@ -253,19 +250,13 @@ class _AccountForm extends State<AccountForm> {
             AppButton(
               height: 45,
               isFullWidth: true,
-              onPressed: _isSaving
-                  ? null // Disable button when saving
-                  : () {
-                onSave(context);
-              },
+              onPressed: _isSaving ? null : () => onSave(context),
               color: Theme.of(context).colorScheme.primary,
               label: "Save",
             ),
-            if (_isSaving) // Show loading indicator when saving
-              Positioned(
-                child: CircularProgressIndicator(
-                  color: Colors.white, // Optional: change color for visibility
-                ),
+            if (_isSaving)
+              const Positioned(
+                child: CircularProgressIndicator(color: Colors.white),
               ),
           ],
         ),

@@ -57,12 +57,14 @@ class _AccountForm extends State<AccountForm> {
           : Uri.parse('http://192.168.1.33:8000/account/update');
       
 
-      print(_account?.toJson());
-      final response = await http.post(
+      final response = (_account?.id == null) ? await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(_account?.toJson()),
-      );
+      ) :  await http.put(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(_account?.toJson()));
 
       if (response.statusCode == 200) {
         print("Account saved successfully: ${jsonDecode(response.body)}");

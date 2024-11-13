@@ -227,10 +227,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
                             offset.dy + size.height,
                             offset.dx + size.width,
                             offset.dy + size.height,
-                            // accKey.currentContext!.findRenderObject()!.semanticBounds.left,
-                            // accKey.currentContext!.findRenderObject()!.semanticBounds.top,
-                            // accKey.currentContext!.findRenderObject()!.semanticBounds.right,
-                            // accKey.currentContext!.findRenderObject()!.semanticBounds.bottom,
                           ),
                           items: [
                             PopupMenuItem<String>(

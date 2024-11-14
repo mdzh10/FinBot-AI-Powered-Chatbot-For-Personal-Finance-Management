@@ -54,7 +54,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               HomeScreen(cubit.state.userId),
               AccountsScreen(cubit.state.userId),
               CategoriesScreen(cubit.state.userId),
-              // SettingsScreen()
+              SettingsScreen(cubit.state.userId)
             ],
             onPageChanged: (int index) {
               setState(() {

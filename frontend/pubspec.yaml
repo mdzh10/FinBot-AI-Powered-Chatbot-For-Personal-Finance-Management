@@ -44,6 +44,9 @@ dependencies:
   material_symbols_icons: ^4.2788.0
   currency_picker: ^2.0.21
   events_emitter: ^0.5.2
+  file_picker: ^8.0.0+1
+  permission_handler: ^11.3.1
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

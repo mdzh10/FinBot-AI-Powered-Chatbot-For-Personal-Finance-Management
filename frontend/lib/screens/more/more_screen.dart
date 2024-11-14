@@ -1,4 +1,5 @@
 import 'package:currency_picker/currency_picker.dart';
+import 'package:finbot/screens/more/CaptureReceiptImage.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,16 +11,16 @@ import '../../helpers/db.helper.dart';
 import '../../widgets/buttons/button.dart';
 import '../../widgets/dialog/confirm.modal.dart';
 import '../../widgets/dialog/loading_dialog.dart';
-class SettingsScreen extends StatefulWidget {
+class MoreScreen extends StatefulWidget {
   final int? userId;
 
-  const SettingsScreen(this.userId, {super.key});
+  const MoreScreen(this.userId, {super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  State<MoreScreen> createState() => _MoreScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _MoreScreenState extends State<MoreScreen> {
   @override
   void initState() {
     super.initState();
@@ -29,7 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ThemeData theme = Theme.of(context);
     return Scaffold(
         appBar: AppBar(
-          title: const Text("Settings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),),
+          title: const Text("More", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),),
         ),
         body: ListView(
           children: [
@@ -44,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        //need to use modify user name api
                         Text("What should we call you?", style: theme.textTheme.bodyLarge!.apply(color: ColorHelper.darken(theme.textTheme.bodyLarge!.color!), fontWeightDelta: 1),),
                         const SizedBox(height: 15,),
                         TextFormField(
@@ -85,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: const CircleAvatar(
                   child: Icon(Symbols.person)
               ),
-              title:  Text('Name', style: Theme.of(context).textTheme.bodyMedium?.merge(const TextStyle(fontWeight: FontWeight.w500, fontSize: 15))),
+              title:  Text('Change name', style: Theme.of(context).textTheme.bodyMedium?.merge(const TextStyle(fontWeight: FontWeight.w500, fontSize: 15))),
               subtitle: BlocBuilder<AppCubit, AppState>(builder: (context, state) {
                 return Text(state.userName!,style: Theme.of(context).textTheme.bodySmall?.apply(color: Colors.grey, overflow: TextOverflow.ellipsis));
               }),
@@ -108,6 +110,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Currency? currency = CurrencyService().findByCode(state.currency!);
                 return Text(currency!.name, style: Theme.of(context).textTheme.bodySmall?.apply(color: Colors.grey, overflow: TextOverflow.ellipsis));
               }),
+            ),
+            ListTile(
+              dense: true,
+              onTap:() async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ImageCapturePage()),
+                );
+              },
+              leading: const CircleAvatar(
+                  child: Icon(Symbols.download,)
+              ),
+              title:  Text('Capture receipt', style: Theme.of(context).textTheme.bodyMedium?.merge(const TextStyle(fontWeight: FontWeight.w500, fontSize: 15))),
+              subtitle:  Text("Take receipt image",style: Theme.of(context).textTheme.bodySmall?.apply(color: Colors.grey, overflow: TextOverflow.ellipsis)),
             ),
             ListTile(
               dense: true,

@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session
+from schemas.account_schema import AccountDetails
+from schemas.category_schema import CategoryDetails
 from models.category import Category
 from models.transaction import Transaction, PaymentTypeEnum
 from models.account import Account
@@ -6,28 +8,41 @@ from schemas.transaction_schema import (
     TransactionListResponse,
     TransactionCreate,
     TransactionDetails,
+    TransactionUpdate,
 )
 from fastapi import HTTPException
 
 
 async def get_all_transactions(db: Session, user_id: int) -> TransactionListResponse:
+    # Retrieve all transactions, accounts, and categories for the user
     transactions = db.query(Transaction).filter(Transaction.user_id == user_id).all()
+    accounts = db.query(Account).filter(Account.user_id == user_id).all()
+    categories = db.query(Category).filter(Category.user_id == user_id).all()
 
     if not transactions:
         raise HTTPException(
             status_code=404, detail="No transactions found for this user"
         )
 
+    # Create dictionaries for quick lookup of accounts and categories by their IDs
+    account_dict = {
+        account.id: AccountDetails.from_orm(account) for account in accounts
+    }
+    category_dict = {
+        category.id: CategoryDetails.from_orm(category) for category in categories
+    }
+
+    # Build the transaction list with full account and category details
     transaction_list = [
         TransactionDetails(
             id=transaction.id,
             user_id=user_id,
-            account_id=transaction.account_id,
-            category_id=transaction.category_id,
+            account=account_dict.get(transaction.account_id),
+            category=category_dict.get(transaction.category_id),
             title=transaction.title,
             description=transaction.description,
             amount=transaction.amount,
-            type="debit" if transaction.type == PaymentTypeEnum.debit else "credit",
+            type=transaction.type,
             datetime=transaction.datetime,
         )
         for transaction in transactions
@@ -84,60 +99,66 @@ async def add_transaction(
     db.refresh(account)
     db.refresh(category)
 
+    # Convert to Pydantic models
+    account_details = AccountDetails.from_orm(account)
+    category_details = CategoryDetails.from_orm(category)
+    transaction_details = TransactionDetails(
+        id=new_transaction.id,
+        user_id=new_transaction.user_id,
+        account=account_details,
+        category=category_details,
+        title=new_transaction.title,
+        description=new_transaction.description,
+        amount=new_transaction.amount,
+        type=new_transaction.type,
+        datetime=new_transaction.datetime,
+    )
+
     return TransactionListResponse(
-        msg="Transaction Created successfully",
-        transactions=[
-            TransactionDetails(
-                id=new_transaction.id,
-                user_id=new_transaction.user_id,
-                account_id=new_transaction.account_id,
-                category_id=new_transaction.category_id,
-                title=new_transaction.title,
-                description=new_transaction.description,
-                amount=new_transaction.amount,
-                type=new_transaction.type,
-                datetime=new_transaction.datetime,
-            )
-        ],
+        msg="Transaction created successfully", transactions=[transaction_details]
     )
 
 
 async def update_transaction(
-    db: Session, transaction: TransactionDetails
+    db: Session, transaction: TransactionUpdate
 ) -> TransactionListResponse:
     # Fetch the existing transaction
     existing_transaction = (
         db.query(Transaction).filter(Transaction.id == transaction.id).first()
     )
-    category = (
+
+    if not existing_transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    # Fetch the associated account and original category
+    account = (
+        db.query(Account).filter(Account.id == existing_transaction.account_id).first()
+    )
+    original_category = (
         db.query(Category)
         .filter(Category.id == existing_transaction.category_id)
         .first()
     )
-    if not existing_transaction:
-        raise HTTPException(status_code=404, detail="Transaction not found")
 
-    # Fetch the associated account
-    account = (
-        db.query(Account).filter(Account.id == existing_transaction.account_id).first()
-    )
     if not account:
         raise HTTPException(status_code=404, detail="Associated account not found")
+    if not original_category:
+        raise HTTPException(status_code=404, detail="Original category not found")
 
     # Store original transaction amount and type
     original_amount = existing_transaction.amount
     original_type = existing_transaction.type
 
-    # Adjust account balance based on the original transaction type
+    # Adjust account balance and original category expense based on original transaction type
     if original_type == PaymentTypeEnum.credit:
-        account.balance -= original_amount  # Remove original credit
+        account.balance -= original_amount
         account.credit -= original_amount
     elif original_type == PaymentTypeEnum.debit:
-        account.balance += original_amount  # Remove original debit
+        account.balance += original_amount
         account.debit -= original_amount
-    category.expense -= original_amount
+    original_category.expense -= original_amount
 
-    # Now apply the updated transaction values
+    # Update the transaction fields
     if transaction.account_id is not None:
         existing_transaction.account_id = transaction.account_id
     if transaction.category_id is not None:
@@ -153,7 +174,16 @@ async def update_transaction(
     if transaction.datetime is not None:
         existing_transaction.datetime = transaction.datetime
 
-    # Adjust the account balance based on the updated transaction
+    # Fetch the new category (if it has changed)
+    new_category = (
+        db.query(Category)
+        .filter(Category.id == existing_transaction.category_id)
+        .first()
+    )
+    if not new_category:
+        raise HTTPException(status_code=404, detail="New category not found")
+
+    # Adjust account balance and new category expense based on the updated transaction type
     if existing_transaction.type == PaymentTypeEnum.credit:
         account.balance += existing_transaction.amount
         account.credit += existing_transaction.amount
@@ -164,29 +194,34 @@ async def update_transaction(
             )
         account.balance -= existing_transaction.amount
         account.debit += existing_transaction.amount
-    category.expense += existing_transaction.amount
 
-    # Commit changes to both the transaction and the account
+    # Adjust expenses for the new category
+    new_category.expense += existing_transaction.amount
+
+    # Commit changes and refresh instances
     db.commit()
     db.refresh(existing_transaction)
     db.refresh(account)
-    db.refresh(category)
+    db.refresh(original_category)
+    db.refresh(new_category)
+
+    # Convert ORM instances to Pydantic models for response
+    account_details = AccountDetails.from_orm(account)
+    category_details = CategoryDetails.from_orm(new_category)
+    transaction_details = TransactionDetails(
+        id=existing_transaction.id,
+        user_id=existing_transaction.user_id,
+        account=account_details,
+        category=category_details,
+        title=existing_transaction.title,
+        description=existing_transaction.description,
+        amount=existing_transaction.amount,
+        type=existing_transaction.type,
+        datetime=existing_transaction.datetime,
+    )
 
     return TransactionListResponse(
-        msg="Transaction Updated Successfully",
-        transactions=[
-            TransactionDetails(
-                id=existing_transaction.id,
-                user_id=existing_transaction.user_id,
-                account_id=existing_transaction.account_id,
-                category_id=existing_transaction.category_id,
-                title=existing_transaction.title,
-                description=existing_transaction.description,
-                amount=existing_transaction.amount,
-                type=existing_transaction.type,
-                datetime=existing_transaction.datetime,
-            )
-        ],
+        msg="Transaction updated successfully", transactions=[transaction_details]
     )
 
 

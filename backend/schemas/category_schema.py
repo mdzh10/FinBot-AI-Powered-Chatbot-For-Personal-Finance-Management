@@ -15,8 +15,14 @@ class CategoryDetails(BaseModel):
     budget: Optional[float] = None
     expense: Optional[float] = None
 
+    class Config:
+        from_attributes = True  # Allows instantiation from ORM objects
+
 
 class CategoryResponse(BaseModel):
     isSuccess: bool = True
     msg: str = "Operation successful"
     data: Optional[List[CategoryDetails]] = None
+
+    class Config:
+        from_attributes = True  # Allows instantiation from ORM objects

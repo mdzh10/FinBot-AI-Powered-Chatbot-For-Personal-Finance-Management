@@ -28,8 +28,14 @@ class AccountDetails(BaseModel):
     credit: Optional[float] = None
     debit: Optional[float] = None
 
+    class Config:
+        from_attributes = True  # Allows instantiation from ORM objects
+
 
 class AccountResponse(BaseModel):
     isSuccess: bool = True
     msg: str = "Account fetched successfully"
     account: Optional[List[AccountDetails]] = None  # Make account optional
+
+    class Config:
+        from_attributes = True  # Allows instantiation from ORM objects

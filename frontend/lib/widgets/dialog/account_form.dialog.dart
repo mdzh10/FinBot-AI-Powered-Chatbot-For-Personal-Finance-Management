@@ -141,6 +141,29 @@ class _AccountForm extends State<AccountForm> {
               ],
             ),
             const SizedBox(height: 20),
+            // Dropdown for Account Type
+            DropdownButtonFormField<AccountType>(
+              value: _account!.accountType,
+              decoration: InputDecoration(
+                labelText: 'Account Type',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+              ),
+              items: AccountType.values.map((AccountType type) {
+                return DropdownMenuItem<AccountType>(
+                  value: type,
+                  child: Text(type.displayName),
+                );
+              }).toList(),
+              onChanged: (AccountType? newType) {
+                setState(() {
+                  _account!.accountType = newType;
+                });
+              },
+            ),
+            const SizedBox(height: 20),
             TextFormField(
               initialValue: _account!.accountName,
               decoration: InputDecoration(
@@ -149,8 +172,7 @@ class _AccountForm extends State<AccountForm> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
               ),
               onChanged: (text) {
                 setState(() {
@@ -167,8 +189,7 @@ class _AccountForm extends State<AccountForm> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
               ),
               onChanged: (text) {
                 int? newAccNo = int.tryParse(text);
@@ -186,8 +207,7 @@ class _AccountForm extends State<AccountForm> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
               ),
               onChanged: (text) {
                 double? newBalance = double.tryParse(text);
@@ -207,8 +227,7 @@ class _AccountForm extends State<AccountForm> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  contentPadding:
-                  const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                 ),
                 onChanged: (text) {
                   double? newCredit = double.tryParse(text);
@@ -229,8 +248,7 @@ class _AccountForm extends State<AccountForm> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  contentPadding:
-                  const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                 ),
                 onChanged: (text) {
                   double? newDebit = double.tryParse(text);
@@ -263,4 +281,5 @@ class _AccountForm extends State<AccountForm> {
       ],
     );
   }
+
 }

@@ -30,7 +30,7 @@ class _SigninPageState extends State<SigninPage> {
       _message = null;
     });
 
-    const url = 'http://192.168.160.192:8000/auth/login';  // Replace with your deployed API URL
+    const url = 'http://192.168.224.192:8000/auth/login';  // Replace with your deployed API URL
 
     try {
       final response = await http.post(
@@ -79,6 +79,7 @@ class _SigninPageState extends State<SigninPage> {
                   color: theme.colorScheme.inversePrimary,
                   isFullWidth: true,
                   onPressed: () {
+                    print(loginResponse.accessToken);
                     cubit.updateAccessToken(loginResponse.accessToken);
                     cubit.updateUserDetails(loginResponse.userName, loginResponse.userId);
                     setState(() {

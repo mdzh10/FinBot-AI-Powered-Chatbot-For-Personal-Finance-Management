@@ -1,6 +1,9 @@
-import 'package:currency_picker/currency_picker.dart';
-import 'package:finbot/screens/more/CaptureReceiptImage.dart';
+import 'dart:convert';
 
+import 'package:currency_picker/currency_picker.dart';
+import 'package:finbot/screens/main.screen.dart';
+import 'package:finbot/screens/more/CaptureReceiptImage.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
@@ -155,31 +158,121 @@ class _MoreScreenState extends State<MoreScreen> {
              ),
             ListTile(
               dense: true,
-              onTap:() async {
+              onTap: () async {
                 ConfirmModal.showConfirmDialog(
-                    context, title: "Are you sure?",
-                    content: const Text("You want to log out"),
-                    onConfirm: ()async{
-                      // Navigator.of(context).pop();
-                      // LoadingModal.showLoadingDialog(context, content: const Text("Exporting data please wait"));
-                      // await export(widget.userId ?? 0).then((value){
-                      //   ScaffoldMessenger.of(context).showSnackBar( SnackBar(content: Text("File has been saved in $value")));
-                      // }).catchError((err){
-                      //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Something went wrong while exporting data")));
-                      // }).whenComplete((){
-                      //   Navigator.of(context).pop();
-                      // });
-                    },
-                    onCancel: (){
-                      Navigator.of(context).pop();
+                  context,
+                  title: "Are you sure?",
+                  content: const Text("You want to log out"),
+                  onConfirm: () async {
+                    final String apiUrl = 'http://192.168.224.192:8000/auth/logout'; // Set your API URL
+                    String? token = await context.read<AppCubit>().getAccessToken(); // Await the token retrieval
+
+                    // Show loading indicator
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) {
+                        return Center(child: CircularProgressIndicator());
+                      },
+                    );
+
+                    try {
+                      // Perform the logout API call without the body
+                      final response = await http.post(
+                        Uri.parse(apiUrl),
+                        headers: {
+                          'Authorization': 'Bearer $token',
+                        },
+                      );
+
+                      final data = jsonDecode(response.body);
+                      Navigator.of(context).pop(); // Dismiss loading indicator
+
+                      if (data['isSuccess'] == true) {
+                        context.read<AppCubit>().resetAccessToken();
+
+                        // Navigate to OnBoard page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const MainScreen()),
+                        );
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text("Logout Successful"),
+                              content: Text("You have been logged out successfully."),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text("OK"),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      } else {
+                        // Show error message in a dialog
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text("Logout Failed"),
+                              content: Text(data['msg'] ?? 'An error occurred during logout.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text("OK"),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      }
+                    } catch (e) {
+                      Navigator.of(context).pop(); // Dismiss loading indicator
+                      // Show error dialog for exceptions
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text("Error"),
+                            content: Text("An error occurred. Please try again."),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text("OK"),
+                              ),
+                            ],
+                          );
+                        },
+                      );
                     }
+                  },
+
+                  onCancel: () {
+                    Navigator.of(context).pop();
+                  },
                 );
               },
               leading: const CircleAvatar(
-                  child: Icon(Symbols.logout,)
+                child: Icon(Icons.logout),
               ),
-              title:  Text('Log out', style: Theme.of(context).textTheme.bodyMedium?.merge(const TextStyle(fontWeight: FontWeight.w500, fontSize: 15))),
+              title: Text(
+                'Log out',
+                style: Theme.of(context).textTheme.bodyMedium?.merge(
+                  const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+                ),
+              ),
             ),
+
+
           ],
         )
     );

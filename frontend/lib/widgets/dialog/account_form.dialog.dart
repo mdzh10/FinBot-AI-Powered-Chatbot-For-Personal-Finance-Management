@@ -55,8 +55,8 @@ class _AccountForm extends State<AccountForm> {
 
     try {
       final url = _account?.id == null
-          ? Uri.parse('http://192.168.160.192:8000/account/create')
-          : Uri.parse('http://192.168.160.192:8000/account/update');
+          ? Uri.parse('http://192.168.224.192:8000/account/create')
+          : Uri.parse('http://192.168.224.192:8000/account/update');
 
       final response = (_account?.id == null)
           ? await http.post(

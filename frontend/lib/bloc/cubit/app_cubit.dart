@@ -48,6 +48,7 @@ class AppCubit extends Cubit<AppState> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove("currency");
     await prefs.remove("access_token");
+    await prefs.remove("userId");
     emit(await AppState.getState());
   }
 
@@ -55,5 +56,10 @@ class AppCubit extends Cubit<AppState> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString("currency", currency);
     emit(await AppState.getState());
+  }
+
+  Future<String?> getAccessToken() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString("access_token");
   }
 }

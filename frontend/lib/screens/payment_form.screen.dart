@@ -30,9 +30,9 @@ class PaymentForm extends StatefulWidget{
 
 class _PaymentForm extends State<PaymentForm>{
   bool _initialised = false;
-  final PaymentDao _paymentDao = PaymentDao();
-  final AccountDao _accountDao = AccountDao();
-  final CategoryDao _categoryDao = CategoryDao();
+  // final PaymentDao _paymentDao = PaymentDao();
+  // final AccountDao _accountDao = AccountDao();
+  // final CategoryDao _categoryDao = CategoryDao();
 
   EventListener? _accountEventListener;
   EventListener? _categoryEventListener;
@@ -51,19 +51,19 @@ class _PaymentForm extends State<PaymentForm>{
   DateTime _datetime = DateTime.now();
 
   loadAccounts(){
-    _accountDao.find().then((value){
-      setState(() {
-        _accounts = value;
-      });
-    });
+    // _accountDao.find().then((value){
+    //   setState(() {
+    //     _accounts = value;
+    //   });
+    // });
   }
 
   loadCategories(){
-    _categoryDao.find().then((value){
-      setState(() {
-        _categories = value;
-      });
-    });
+    // _categoryDao.find().then((value){
+    //   setState(() {
+    //     _categories = value;
+    //   });
+    // });
   }
 
   void populateState() async{
@@ -145,7 +145,7 @@ class _PaymentForm extends State<PaymentForm>{
         description: _description,
         userId: widget.userId ?? 0
     );
-    await _paymentDao.upsert(transaction);
+    // await _paymentDao.upsert(transaction);
     if (widget.onClose != null) {
       widget.onClose!(transaction);
     }
@@ -191,11 +191,11 @@ class _PaymentForm extends State<PaymentForm>{
                   onPressed: (){
                     ConfirmModal.showConfirmDialog(context, title: "Are you sure?", content: const Text("After deleting payment can't be recovered."),
                         onConfirm: (){
-                          _paymentDao.deleteTransaction(_id!).then((value) {
-                            // globalEvent.emit("payment_update");
-                            Navigator.pop(context);
-                            Navigator.pop(context);
-                          });
+                          // _paymentDao.deleteTransaction(_id!).then((value) {
+                          //   // globalEvent.emit("payment_update");
+                          //   Navigator.pop(context);
+                          //   Navigator.pop(context);
+                          // });
                         },
                         onCancel: (){
                           Navigator.pop(context);

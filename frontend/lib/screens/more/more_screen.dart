@@ -153,6 +153,33 @@ class _MoreScreenState extends State<MoreScreen> {
               title:  Text('Export', style: Theme.of(context).textTheme.bodyMedium?.merge(const TextStyle(fontWeight: FontWeight.w500, fontSize: 15))),
               subtitle:  Text("Export to file",style: Theme.of(context).textTheme.bodySmall?.apply(color: Colors.grey, overflow: TextOverflow.ellipsis)),
              ),
+            ListTile(
+              dense: true,
+              onTap:() async {
+                ConfirmModal.showConfirmDialog(
+                    context, title: "Are you sure?",
+                    content: const Text("You want to log out"),
+                    onConfirm: ()async{
+                      // Navigator.of(context).pop();
+                      // LoadingModal.showLoadingDialog(context, content: const Text("Exporting data please wait"));
+                      // await export(widget.userId ?? 0).then((value){
+                      //   ScaffoldMessenger.of(context).showSnackBar( SnackBar(content: Text("File has been saved in $value")));
+                      // }).catchError((err){
+                      //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Something went wrong while exporting data")));
+                      // }).whenComplete((){
+                      //   Navigator.of(context).pop();
+                      // });
+                    },
+                    onCancel: (){
+                      Navigator.of(context).pop();
+                    }
+                );
+              },
+              leading: const CircleAvatar(
+                  child: Icon(Symbols.logout,)
+              ),
+              title:  Text('Log out', style: Theme.of(context).textTheme.bodyMedium?.merge(const TextStyle(fontWeight: FontWeight.w500, fontSize: 15))),
+            ),
           ],
         )
     );

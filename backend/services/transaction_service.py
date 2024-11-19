@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Optional
+from fastapi.params import Query
 from sqlalchemy.orm import Session
 from schemas.account_schema import AccountDetails
 from schemas.category_schema import CategoryDetails
@@ -13,9 +16,24 @@ from schemas.transaction_schema import (
 from fastapi import HTTPException
 
 
-async def get_all_transactions(db: Session, user_id: int) -> TransactionListResponse:
-    # Retrieve all transactions, accounts, and categories for the user
-    transactions = db.query(Transaction).filter(Transaction.user_id == user_id).all()
+async def get_all_transactions(
+    db: Session,
+    user_id: int,
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+) -> TransactionListResponse:
+    # Start with base query
+    transaction_query = db.query(Transaction).filter(Transaction.user_id == user_id)
+
+    # Apply date range filter if provided
+    if start_date:
+        transaction_query = transaction_query.filter(Transaction.datetime >= start_date)
+
+    if end_date:
+        transaction_query = transaction_query.filter(Transaction.datetime <= end_date)
+
+    # Execute query
+    transactions = transaction_query.all()
     accounts = db.query(Account).filter(Account.user_id == user_id).all()
     categories = db.query(Category).filter(Category.user_id == user_id).all()
 

@@ -1,4 +1,7 @@
+from datetime import datetime
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.params import Query
 from sqlalchemy.orm import Session
 from config.db.database import get_db
 from services.transaction_service import (
@@ -17,8 +20,13 @@ router = APIRouter()
 
 
 @router.get("/{user_id}", response_model=TransactionListResponse)
-async def get_transactions(user_id: int, db: Session = Depends(get_db)):
-    transactions = await get_all_transactions(db, user_id)
+async def get_transactions(
+    user_id: int,
+    db: Session = Depends(get_db),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None)
+):
+    transactions = await get_all_transactions(db, user_id, start_date, end_date)
 
     if not transactions:
         raise HTTPException(

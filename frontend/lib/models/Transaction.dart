@@ -34,12 +34,11 @@ extension TransactionTypeExtension on TransactionType {
   }
 }
 
-
 class Transaction {
   final int id;
-  final Account account; // Assuming you already have an Account class
+  final Account account;
   final int userId;
-  final Category category; // Assuming you already have a Category class
+  final Category category;
   final String title;
   final String description;
   final double amount;
@@ -62,9 +61,9 @@ class Transaction {
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
       id: json['id'],
-      account: Account.fromJson(json['account']), // Assuming your Account class has fromJson
+      account: Account.fromJson(json['account']),
       userId: json['user_id'],
-      category: Category.fromJson(json['category']), // Assuming your Category class has fromJson
+      category: Category.fromJson(json['category']),
       title: json['title'],
       description: json['description'],
       amount: json['amount'].toDouble(),
@@ -72,4 +71,20 @@ class Transaction {
       datetime: DateTime.parse(json['datetime']),
     );
   }
+
+  // Convert a Transaction to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'account': account.toJson(),
+      'user_id': userId,
+      'category': category.toJson(),
+      'title': title,
+      'description': description,
+      'amount': amount,
+      'type': type.toJson(),
+      'datetime': datetime.toIso8601String(),
+    };
+  }
 }
+

@@ -1,6 +1,10 @@
-import 'package:events_emitter/listener.dart';
-import 'package:finbot/models/Transaction.dart';
+import 'dart:convert';
 
+import 'package:events_emitter/listener.dart';
+import 'package:finbot/models/AccountResponseModel.dart';
+import 'package:finbot/models/CategoryResponseModel.dart';
+import 'package:finbot/models/Transaction.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -30,12 +34,15 @@ class PaymentForm extends StatefulWidget{
 
 class _PaymentForm extends State<PaymentForm>{
   bool _initialised = false;
+  bool _isLoading = false;
   // final PaymentDao _paymentDao = PaymentDao();
   // final AccountDao _accountDao = AccountDao();
   // final CategoryDao _categoryDao = CategoryDao();
 
   EventListener? _accountEventListener;
   EventListener? _categoryEventListener;
+  AccountResponseModel? accountResponseModel;
+  CategoryResponse? categoryResponse;
 
   List<Account> _accounts = [];
   List<Category> _categories = [];
@@ -50,20 +57,55 @@ class _PaymentForm extends State<PaymentForm>{
   TransactionType _type= TransactionType.credit;
   DateTime _datetime = DateTime.now();
 
-  loadAccounts(){
-    // _accountDao.find().then((value){
-    //   setState(() {
-    //     _accounts = value;
-    //   });
-    // });
+  loadAccounts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final String apiUrl = "http://192.168.224.192:8000/account/" + widget.userId.toString();
+    final response = await http.get(
+      Uri.parse(apiUrl),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      accountResponseModel = AccountResponseModel.fromJson(data);
+    } else {
+      throw Exception('Failed to load accounts');
+    }
+
+    List<Account>? accounts = accountResponseModel?.accounts;
+
+    setState(() {
+      _accounts = accounts ?? [];
+      _isLoading = false;
+    });
+
   }
 
-  loadCategories(){
-    // _categoryDao.find().then((value){
-    //   setState(() {
-    //     _categories = value;
-    //   });
-    // });
+  loadCategories() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final String apiUrl = "http://192.168.224.192:8000/category/" + widget.userId.toString();
+    final response = await http.get(
+      Uri.parse(apiUrl),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      categoryResponse = CategoryResponse.fromJson(data);
+    } else {
+      throw Exception('Failed to load categories');
+    }
+
+    setState(() {
+      _categories = categoryResponse?.categories ?? [];
+      _isLoading = false;
+    });
   }
 
   void populateState() async{
@@ -145,13 +187,86 @@ class _PaymentForm extends State<PaymentForm>{
         description: _description,
         userId: widget.userId ?? 0
     );
-    // await _paymentDao.upsert(transaction);
+
+    try {
+      final url = transaction.id == null
+          ? Uri.parse('http://192.168.224.192:8000/transaction/add')
+          : Uri.parse('http://192.168.224.192:8000/account/update');
+
+      final response = (_account?.id == null)
+          ? await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(transaction?.toJson()),
+      )
+          : await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(_account?.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        widget.onSave?.call(); // Trigger callback to refresh accounts list
+        Navigator.pop(context);
+      } else {
+        print("Failed to save account: ${response.body}");
+        throw Exception("Failed to save account");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+
+
     if (widget.onClose != null) {
       widget.onClose!(transaction);
     }
     Navigator.of(context).pop();
     // globalEvent.emit("payment_update");
   }
+
+  void upsert(Transaction? transaction) async {
+    int result;
+
+    try {
+      final url = _account?.id == null
+          ? Uri.parse('http://192.168.224.192:8000/account/create')
+          : Uri.parse('http://192.168.224.192:8000/account/update');
+
+      final response = (_account?.id == null)
+          ? await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(_account?.toJson()),
+      )
+          : await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(_account?.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        widget.onSave?.call(); // Trigger callback to refresh accounts list
+        Navigator.pop(context);
+      } else {
+        print("Failed to save account: ${response.body}");
+        throw Exception("Failed to save account");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+
+
+    if(transaction?.id != null) {
+      result = await db.update(
+          "payments", transaction.toJson(), where: "id = ?",
+          whereArgs: [transaction.id]);
+    } else {
+      result = await db.insert("payments", transaction.toJson());
+    }
+
+    return result;
+  }
+
 
 
   @override

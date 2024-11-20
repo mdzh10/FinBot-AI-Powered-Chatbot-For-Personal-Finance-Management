@@ -1,9 +1,10 @@
 from passlib.context import CryptContext
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from models.user import User
 from schemas.authentication_schema import UserResponse, LoginResponse, ErrorResponse
+from fastapi import HTTPException, status
 
 # Add your generated SECRET_KEY here
 SECRET_KEY = "d9b1f8e0e2a3a9b2a45a0d5fb53d6ea6a1cdbb627ff5aa3a7091f5c8dfc8c3d3"
@@ -70,3 +71,17 @@ async def handle_login(user, db: Session):
         username=db_user.username,
         phone_number=db_user.phone_number,
     )
+
+
+async def handle_logout(token: str):
+    try:
+        # Decode the token to check if it's valid. If invalid, raise an error.
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return ErrorResponse(isSuccess=False, msg="Token is invalid or expired")
+    except JWTError:
+        return ErrorResponse(isSuccess=False, msg="Token is invalid or expired")
+
+    # No action needed server-side, as the token will no longer be stored client-side.
+    return UserResponse(isSuccess=True, msg="Logged out successfully")

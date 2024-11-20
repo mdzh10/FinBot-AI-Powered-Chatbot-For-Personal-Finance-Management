@@ -20,6 +20,15 @@ extension AccountTypeExtension on AccountType {
         return 'cash';
     }
   }
+
+  String get displayName {
+    switch (this) {
+      case AccountType.bank:
+        return 'Bank';
+      case AccountType.cash:
+        return 'Cash';
+    }
+  }
 }
 
 class Account {

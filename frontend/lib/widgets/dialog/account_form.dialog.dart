@@ -1,9 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+
 import '../../models/Account.dart';
 import '../buttons/button.dart';
+
 
 typedef Callback = void Function();
 
@@ -20,7 +22,7 @@ class AccountForm extends StatefulWidget {
 
 class _AccountForm extends State<AccountForm> {
   Account? _account;
-  bool _isSaving = false; // Loading state variable
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -28,13 +30,12 @@ class _AccountForm extends State<AccountForm> {
     if (widget.account != null) {
       _account = Account(
         id: widget.account!.id,
-        userId: widget.userId,
         accountName: widget.account!.accountName,
         accountNumber: widget.account!.accountNumber,
         accountType: widget.account!.accountType,
         balance: widget.account!.balance,
-        debit: widget.account!.debit,
-        credit: widget.account!.credit,
+        debit: widget.account?.debit ?? 0,
+        credit: widget.account?.credit ?? 0,
       );
     } else {
       _account = Account(
@@ -42,54 +43,51 @@ class _AccountForm extends State<AccountForm> {
         accountName: "",
         accountNumber: 0,
         accountType: AccountType.bank,
-        debit: 0,
         balance: 0,
-        credit: 0,
       );
     }
   }
 
-  void onSave(context) async {
+  void onSave(BuildContext context) async {
     setState(() {
-      _isSaving = true; // Show loading indicator
+      _isSaving = true;
     });
 
     try {
       final url = _account?.id == null
-          ? Uri.parse('http://192.168.1.34:8000/account/create')
-          : Uri.parse('http://192.168.1.34:8000/account/update');
+          ? Uri.parse('http://192.168.224.192:8000/account/create')
+          : Uri.parse('http://192.168.224.192:8000/account/update');
 
-      final response = await http.post(
+      final response = (_account?.id == null)
+          ? await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(_account?.toJson()),
+      )
+          : await http.put(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(_account?.toJson()),
       );
 
       if (response.statusCode == 200) {
-        print("Account saved successfully: ${jsonDecode(response.body)}");
+        widget.onSave?.call(); // Trigger callback to refresh accounts list
+        Navigator.pop(context);
       } else {
         print("Failed to save account: ${response.body}");
         throw Exception("Failed to save account");
       }
-
-      if (widget.onSave != null) {
-        widget.onSave!();
-      }
-      Navigator.pop(context);
     } catch (e) {
       print("Error: $e");
     } finally {
       setState(() {
-        _isSaving = false; // Hide loading indicator
+        _isSaving = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_account == null) {
-      return const CircularProgressIndicator();
-    }
     return AlertDialog(
       title: Text(
         widget.account != null ? "Edit Account" : "New Account",
@@ -143,6 +141,29 @@ class _AccountForm extends State<AccountForm> {
               ],
             ),
             const SizedBox(height: 20),
+            // Dropdown for Account Type
+            DropdownButtonFormField<AccountType>(
+              value: _account!.accountType,
+              decoration: InputDecoration(
+                labelText: 'Account Type',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+              ),
+              items: AccountType.values.map((AccountType type) {
+                return DropdownMenuItem<AccountType>(
+                  value: type,
+                  child: Text(type.displayName),
+                );
+              }).toList(),
+              onChanged: (AccountType? newType) {
+                setState(() {
+                  _account!.accountType = newType;
+                });
+              },
+            ),
+            const SizedBox(height: 20),
             TextFormField(
               initialValue: _account!.accountName,
               decoration: InputDecoration(
@@ -151,8 +172,7 @@ class _AccountForm extends State<AccountForm> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
               ),
               onChanged: (text) {
                 setState(() {
@@ -169,8 +189,7 @@ class _AccountForm extends State<AccountForm> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
               ),
               onChanged: (text) {
                 int? newAccNo = int.tryParse(text);
@@ -188,8 +207,7 @@ class _AccountForm extends State<AccountForm> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
               ),
               onChanged: (text) {
                 double? newBalance = double.tryParse(text);
@@ -199,42 +217,46 @@ class _AccountForm extends State<AccountForm> {
               },
             ),
             const SizedBox(height: 20),
-            TextFormField(
-              initialValue: _account!.credit.toString(),
-              decoration: InputDecoration(
-                labelText: 'Credit',
-                hintText: 'Enter credit',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
+            Visibility(
+              visible: _account?.id != null,
+              child: TextFormField(
+                initialValue: _account!.credit.toString(),
+                decoration: InputDecoration(
+                  labelText: 'Credit',
+                  hintText: 'Enter credit',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                 ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                onChanged: (text) {
+                  double? newCredit = double.tryParse(text);
+                  setState(() {
+                    _account!.credit = newCredit ?? 0;
+                  });
+                },
               ),
-              onChanged: (text) {
-                double? newCredit = double.tryParse(text);
-                setState(() {
-                  _account!.credit = newCredit ?? 0;
-                });
-              },
             ),
             const SizedBox(height: 20),
-            TextFormField(
-              initialValue: _account!.debit.toString(),
-              decoration: InputDecoration(
-                labelText: 'Debit',
-                hintText: 'Enter debit',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
+            Visibility(
+              visible: _account?.id != null,
+              child: TextFormField(
+                initialValue: _account!.debit.toString(),
+                decoration: InputDecoration(
+                  labelText: 'Debit',
+                  hintText: 'Enter debit',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                 ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                onChanged: (text) {
+                  double? newDebit = double.tryParse(text);
+                  setState(() {
+                    _account!.debit = newDebit ?? 0;
+                  });
+                },
               ),
-              onChanged: (text) {
-                double? newDebit = double.tryParse(text);
-                setState(() {
-                  _account!.debit = newDebit ?? 0;
-                });
-              },
             ),
           ],
         ),
@@ -246,23 +268,18 @@ class _AccountForm extends State<AccountForm> {
             AppButton(
               height: 45,
               isFullWidth: true,
-              onPressed: _isSaving
-                  ? null // Disable button when saving
-                  : () {
-                onSave(context);
-              },
+              onPressed: _isSaving ? null : () => onSave(context),
               color: Theme.of(context).colorScheme.primary,
               label: "Save",
             ),
-            if (_isSaving) // Show loading indicator when saving
-              Positioned(
-                child: CircularProgressIndicator(
-                  color: Colors.white, // Optional: change color for visibility
-                ),
+            if (_isSaving)
+              const Positioned(
+                child: CircularProgressIndicator(color: Colors.white),
               ),
           ],
         ),
       ],
     );
   }
+
 }

@@ -37,3 +37,6 @@ class LoginResponse(BaseModel):
 class ErrorResponse(BaseModel):
     isSuccess: bool = False
     msg: str
+
+
+

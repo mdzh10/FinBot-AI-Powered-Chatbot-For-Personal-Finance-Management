@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:events_emitter/listener.dart';
 import 'package:events_emitter/events_emitter.dart';
 import 'package:finbot/models/AccountResponseModel.dart';
+import 'package:finbot/models/Transaction.dart';
 import 'package:finbot/screens/home/widgets/account_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,6 +14,7 @@ import '../../models/Account.dart';
 import '../../models/DashboardResponseModel.dart';
 import '../../theme/colors.dart';
 import '../../widgets/currency.dart';
+import '../payment_form.screen.dart';
 
 
 String greeting() {
@@ -56,9 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Account? _account;
   // Category? _category;
 
-  // void openAddPaymentPage(PaymentType type) async {
-  //   Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: type)));
-  // }
+  void openAddPaymentPage(TransactionType type) async {
+    Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: type, userId: widget.userId,)));
+  }
 
   void handleChooseDateRange() async{
     final selected = await showDateRangePicker(
@@ -81,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
     final url = Uri.parse(
-        'http://192.168.1.34:8000/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
+        'http://192.168.224.192:8000/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
 
     try {
       final responseDashboard = await http.get(url);
@@ -97,12 +99,12 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error: $e');
     }
 
-      final String apiUrl = "http://192.168.1.34:8000/account/"+userId.toString();
+      final String apiUrl = "http://192.168.224.192:8000/account/"+userId.toString();
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: {"Content-Type": "application/json"},
       );
-
+      print(json.decode(response.body));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         accountResponseModel = AccountResponseModel.fromJson(data);
@@ -300,10 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
           )
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: ()=> {
-
-        },
-            // openAddPaymentPage(PaymentType.credit),
+        onPressed: ()=> openAddPaymentPage(TransactionType.credit),
         child: const Icon(Icons.add),
       ),
     );

@@ -56,7 +56,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       _isLoading = true;
     });
 
-    final String apiUrl = "http://192.168.224.192:8000/category/" + widget.userId.toString();
+    final String apiUrl = "http://192.168.1.33:8000/category/" + widget.userId.toString();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},

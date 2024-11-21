@@ -49,20 +49,20 @@ class _PaymentForm extends State<PaymentForm>{
 
   //values
   int? _id;
-  String _title = "";
-  String _description="";
+  String? _title = "";
+  String? _description="";
   Account? _account;
   Category? _category;
-  double _amount=0;
-  TransactionType _type= TransactionType.credit;
-  DateTime _datetime = DateTime.now();
+  double? _amount=0;
+  TransactionType? _type= TransactionType.credit;
+  DateTime? _datetime = DateTime.now();
 
   loadAccounts() async {
     setState(() {
       _isLoading = true;
     });
 
-    final String apiUrl = "http://192.168.224.192:8000/account/" + widget.userId.toString();
+    final String apiUrl = "http://192.168.1.33:8000/account/" + widget.userId.toString();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},
@@ -89,7 +89,7 @@ class _PaymentForm extends State<PaymentForm>{
       _isLoading = true;
     });
 
-    final String apiUrl = "http://192.168.224.192:8000/category/" + widget.userId.toString();
+    final String apiUrl = "http://192.168.1.33:8000/category/" + widget.userId.toString();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},
@@ -135,7 +135,7 @@ class _PaymentForm extends State<PaymentForm>{
   }
 
   Future<void> chooseDate(BuildContext context) async {
-    DateTime initialDate = _datetime;
+    DateTime? initialDate = _datetime;
     final DateTime? picked = await showDatePicker(
         context: context,
         initialDate: initialDate,
@@ -148,16 +148,16 @@ class _PaymentForm extends State<PaymentForm>{
             picked.year,
             picked.month,
             picked.day,
-            initialDate.hour,
-            initialDate.minute
+            initialDate!.hour,
+            initialDate!.minute
         );
       });
     }
   }
 
   Future<void> chooseTime(BuildContext context) async {
-    DateTime initialDate = _datetime;
-    TimeOfDay initialTime = TimeOfDay(hour: initialDate.hour, minute: initialDate.minute);
+    DateTime? initialDate = _datetime;
+    TimeOfDay initialTime = TimeOfDay(hour: initialDate!.hour, minute: initialDate.minute);
     final TimeOfDay? time = await showTimePicker(
         context: context,
         initialTime: initialTime,
@@ -176,8 +176,8 @@ class _PaymentForm extends State<PaymentForm>{
     }
   }
 
-  void handleSaveTransaction(context) async{
-    Transaction transaction = Transaction(id: _id ?? 0,
+  void handleSaveTransaction(context) async {
+    Transaction transaction = Transaction(id: _id,
         account: _account!,
         category: _category!,
         amount: _amount,
@@ -188,33 +188,86 @@ class _PaymentForm extends State<PaymentForm>{
         userId: widget.userId ?? 0
     );
 
-    try {
-      final url = transaction.id == null
-          ? Uri.parse('http://192.168.224.192:8000/transaction/add')
-          : Uri.parse('http://192.168.224.192:8000/account/update');
+    if (transaction.id == null) {
+      final url = Uri.parse('http://192.168.1.33:8000/transaction/add');
 
-      final response = (_account?.id == null)
-          ? await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(transaction?.toJson()),
-      )
-          : await http.put(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(_account?.toJson()),
-      );
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
 
-      if (response.statusCode == 200) {
-        widget.onSave?.call(); // Trigger callback to refresh accounts list
-        Navigator.pop(context);
-      } else {
-        print("Failed to save account: ${response.body}");
-        throw Exception("Failed to save account");
+      final body = jsonEncode({
+        "user_id": widget.userId,
+        "account_id": _account?.id,
+        "category_id": _category?.id,
+        "title": _title,
+        "description": _description,
+        "amount": _amount,
+        "type": _type,
+        "datetime": _datetime,
+      });
+
+      try {
+        final response = await http.post(url, headers: headers, body: body);
+
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+
+          if (responseData['isSuccess']) {
+            print("Transaction added successfully!");
+            print("Response Message: ${responseData['msg']}");
+            print("Transactions: ${responseData['transactions']}");
+          } else {
+            print("Failed to add transaction: ${responseData['msg']}");
+          }
+        } else {
+          print("Error: ${response.statusCode}");
+          print("Response Body: ${response.body}");
+        }
+      } catch (e) {
+        print("Exception occurred: $e");
       }
-    } catch (e) {
-      print("Error: $e");
-    }
+    } else {
+      final url = Uri.parse('http://192.168.1.33:8000/transaction/modify'); // Replace with your API URL
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+
+      final body = jsonEncode({
+        "id": transaction.id,
+        "user_id": widget.userId,
+        "account_id": _account?.id,
+        "category_id": _category?.id,
+        "title": _title,
+        "description": _description,
+        "amount": _amount,
+        "type": _type?.toJson(),
+        "datetime": _datetime?.toIso8601String(),
+      });
+
+      try {
+        final response = await http.put(url, headers: headers, body: body);
+
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+
+          if (responseData['isSuccess']) {
+            print("Transaction modified successfully!");
+            print("Response Message: ${responseData['msg']}");
+            print("Transactions: ${responseData['transactions']}");
+          } else {
+            print("Failed to modify transaction: ${responseData['msg']}");
+          }
+        } else {
+          print("Error: ${response.statusCode}");
+          print("Response Body: ${response.body}");
+        }
+      } catch (e) {
+        print("Exception occurred: $e");
+      }
+
+  }
 
 
     if (widget.onClose != null) {
@@ -224,48 +277,6 @@ class _PaymentForm extends State<PaymentForm>{
     // globalEvent.emit("payment_update");
   }
 
-  void upsert(Transaction? transaction) async {
-    int result;
-
-    try {
-      final url = _account?.id == null
-          ? Uri.parse('http://192.168.224.192:8000/account/create')
-          : Uri.parse('http://192.168.224.192:8000/account/update');
-
-      final response = (_account?.id == null)
-          ? await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(_account?.toJson()),
-      )
-          : await http.put(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(_account?.toJson()),
-      );
-
-      if (response.statusCode == 200) {
-        widget.onSave?.call(); // Trigger callback to refresh accounts list
-        Navigator.pop(context);
-      } else {
-        print("Failed to save account: ${response.body}");
-        throw Exception("Failed to save account");
-      }
-    } catch (e) {
-      print("Error: $e");
-    }
-
-
-    if(transaction?.id != null) {
-      result = await db.update(
-          "payments", transaction.toJson(), where: "id = ?",
-          whereArgs: [transaction.id]);
-    } else {
-      result = await db.insert("payments", transaction.toJson());
-    }
-
-    return result;
-  }
 
 
 
@@ -437,7 +448,7 @@ class _PaymentForm extends State<PaymentForm>{
                                               spacing: 10,
                                               children: [
                                                 Icon(Icons.calendar_today, size: 18, color: Theme.of(context).colorScheme.primary,),
-                                                Text(DateFormat("dd/MM/yyyy").format(_datetime))
+                                                Text(DateFormat("dd/MM/yyyy").format(_datetime ?? DateTime.now()))
                                               ],
                                             )
                                         )
@@ -452,7 +463,7 @@ class _PaymentForm extends State<PaymentForm>{
                                               spacing: 10,
                                               children: [
                                                 Icon(Icons.watch_later_outlined, size: 18, color: Theme.of(context).colorScheme.primary,),
-                                                Text(DateFormat("hh:mm a").format(_datetime))
+                                                Text(DateFormat("hh:mm a").format(_datetime ?? DateTime.now()))
                                               ],
                                             )
                                         )
@@ -680,7 +691,7 @@ class _PaymentForm extends State<PaymentForm>{
                   height: 50,
                   labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   isFullWidth: true,
-                  onPressed: _amount > 0 && _account!=null && _category!=null ? (){
+                  onPressed: _amount! > 0 && _account!=null && _category!=null ? (){
                     handleSaveTransaction(context);
                   } : null,
                   color: Theme.of(context).colorScheme.primary,

@@ -35,15 +35,15 @@ extension TransactionTypeExtension on TransactionType {
 }
 
 class Transaction {
-  final int id;
-  final Account account;
-  final int userId;
-  final Category category;
-  final String title;
-  final String description;
-  final double amount;
-  final TransactionType type;
-  final DateTime datetime;
+  final int? id;
+  final Account? account;
+  final int? userId;
+  final Category? category;
+  final String? title;
+  final String? description;
+  final double? amount;
+  final TransactionType? type;
+  final DateTime? datetime;
 
   Transaction({
     required this.id,
@@ -76,14 +76,14 @@ class Transaction {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'account': account.toJson(),
+      'account': account?.toJson(),
       'user_id': userId,
-      'category': category.toJson(),
+      'category': category?.toJson(),
       'title': title,
       'description': description,
       'amount': amount,
-      'type': type.toJson(),
-      'datetime': datetime.toIso8601String(),
+      'type': type?.toJson(),
+      'datetime': datetime?.toIso8601String(),
     };
   }
 }

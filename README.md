@@ -7,3 +7,9 @@ FOR people facing challenges in managing their finances WHO wants to track their
 
 run this in backend folder 
 `uvicorn main:app --host 0.0.0.0 --port 8000 --log-level info`
+
+Adjustments to Deployment Steps
+`docker build -t fastapi-backend .`
+
+Run Locally for Testing:
+`docker run -d -p 8000:8000 fastapi-backend`

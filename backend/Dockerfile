@@ -5,16 +5,16 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copy the requirements file into the container
-COPY backend/requirements.txt .
+COPY requirements.txt .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the FastAPI backend code into the container
-COPY backend /app
+COPY . /app
 
-# Expose port 8000 for FastAPI
-EXPOSE 8080
+# Expose port 5000 for FastAPI
+EXPOSE 5000
 
 # Command to run the FastAPI app using Uvicorn
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]

@@ -1,0 +1,12 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: finbot-fastapi-service
+spec:
+  template:
+    spec:
+      containers:
+        - image: us-central1-docker.pkg.dev/finbot-deploy1/finbot-fastapi/finbot-fastapi:latest
+          env:
+          ports:
+            - containerPort: 4000

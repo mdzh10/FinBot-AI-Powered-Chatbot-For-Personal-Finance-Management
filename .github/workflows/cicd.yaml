@@ -8,10 +8,10 @@ env:
 on:
   push:
     branches:
-      - gcp_deploy_cicd
+      - main
   pull_request:
     branches:
-      - gcp_deploy_cicd
+      - main
 
 jobs:
   dockerize-and-deploy:

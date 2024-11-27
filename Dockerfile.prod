@@ -13,11 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Set PYTHONPATH
 ENV PYTHONPATH=/usr/app/backend
 
-# # Load environment variables from config.env
-# ENV $(grep -v '^#' /usr/app/backend/config/.env | xargs)
-# ENV DATABASE_URL=${DATABASE_URL}
-# ENV GPT4_API_KEY=${GPT4_API_KEY}
-
 # Expose the port
 EXPOSE 8080
 

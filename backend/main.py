@@ -51,6 +51,7 @@ async def shutdown():
 async def root():
     return {"message": "Successfully connected to Supabase!"}
 
+
 @app.get("/checkCiCd")
 async def root():
     return {"message": "Successfully deployed with cicd1"}

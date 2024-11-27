@@ -1,10 +1,8 @@
 from dotenv import load_dotenv
 import os
 
-print(os.getcwd())
-
 # Load .env only for local development
-load_dotenv(dotenv_path="./config/.env", override=True, verbose=True)
+load_dotenv(dotenv_path="./config/.env", verbose=True)
 
 
 class Settings:

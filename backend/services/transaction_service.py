@@ -188,7 +188,7 @@ async def update_transaction(
     if transaction.amount is not None:
         existing_transaction.amount = transaction.amount
     if transaction.type is not None:
-        existing_transaction.type = PaymentTypeEnum[transaction.type]
+        existing_transaction.type = transaction.type
     if transaction.datetime is not None:
         existing_transaction.datetime = transaction.datetime
 

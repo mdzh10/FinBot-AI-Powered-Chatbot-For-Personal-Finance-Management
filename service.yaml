@@ -7,13 +7,13 @@ spec:
     spec:
       containers:
         - image: us-central1-docker.pkg.dev/finbotv2/finbot-fastapi/finbot-fastapi:latest
-          env:
-            - name: DATABASE_URL
-              # value: "${DATABASE_URL}"  # Retrieve from the environment
-              value: "postgresql://postgres.mdraearuoglaytiiuncf:%23LetsCodeTogether24@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+          # env:
+          #   - name: DATABASE_URL
+          #     # value: "${DATABASE_URL}"  # Retrieve from the environment
+          #     value: "postgresql://postgres.mdraearuoglaytiiuncf:%23LetsCodeTogether24@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
 
-            - name: GPT4_API_KEY
-              value: "${GPT4_API_KEY}"  # Retrieve from the environment
+          #   - name: GPT4_API_KEY
+          #     value: "${GPT4_API_KEY}"  # Retrieve from the environment
           ports:
             - containerPort: 8080
       timeoutSeconds: 600

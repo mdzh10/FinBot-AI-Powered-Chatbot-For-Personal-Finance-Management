@@ -6,14 +6,25 @@ spec:
   template:
     spec:
       containers:
-        - image: us-central1-docker.pkg.dev/finbotv2/finbot-fastapi/finbot-fastapi:latest
-          env:
-            - name: DATABASE_URL
-              # value: "${DATABASE_URL}"  # Retrieve from the environment
-              value: "postgresql://postgres.mdraearuoglaytiiuncf:%23LetsCodeTogether24@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
-
-          #   - name: GPT4_API_KEY
-          #     value: "${GPT4_API_KEY}"  # Retrieve from the environment
-          ports:
-            - containerPort: 8080
+      - image: us-central1-docker.pkg.dev/finbotv2/finbot-fastapi/finbot-fastapi:latest
+        ports:
+          - containerPort: 8080
+        volumeMounts:
+        - name: DATABASE_URL
+          mountPath: /var/secrets/DB
+        - name: GPT4_API_KEY
+          mountPath: /var/secrets/GPT
+      volumes:
+      - name: DATABASE_URL
+        secret:
+          secretName: DATABASE_URL
+          items:
+          - key: latest
+            path: DATABASE_URL
+      - name: GPT4_API_KEY
+        secret:
+          secretName: GPT4_API_KEY
+          items:
+          - key: latest
+            path: GPT4_API_KEY
       timeoutSeconds: 600

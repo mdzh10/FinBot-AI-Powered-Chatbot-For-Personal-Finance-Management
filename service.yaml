@@ -1,0 +1,30 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: finbot-fastapi
+spec:
+  template:
+    spec:
+      containers:
+      - image: us-central1-docker.pkg.dev/finbotv2/finbot-fastapi/finbot-fastapi:latest
+        ports:
+          - containerPort: 8080
+        volumeMounts:
+        - name: DATABASE_URL
+          mountPath: /var/secrets/DB
+        - name: GPT4_API_KEY
+          mountPath: /var/secrets/GPT
+      volumes:
+      - name: DATABASE_URL
+        secret:
+          secretName: DATABASE_URL
+          items:
+          - key: latest
+            path: DATABASE_URL
+      - name: GPT4_API_KEY
+        secret:
+          secretName: GPT4_API_KEY
+          items:
+          - key: latest
+            path: GPT4_API_KEY
+      timeoutSeconds: 600

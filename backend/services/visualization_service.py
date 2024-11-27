@@ -1,3 +1,4 @@
+import os
 import requests
 import base64
 from io import BytesIO
@@ -10,6 +11,10 @@ from config.db.database import engine
 # prompt = "generate a bar plot comparing total debit and credit for the month of October 2024 for user 1"
 CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions"
 MODEL = "gpt-4o"
+if settings is not None and settings.GPT4_API_KEY is not None:
+    GPT4_API_KEY = settings.GPT4_API_KEY
+else:
+    GPT4_API_KEY = os.getenv("GPT4_API_KEY")
 
 
 async def generate_visualization(prompt: str):
@@ -82,7 +87,7 @@ async def generate_sql_code(prompt: str, DATABASE_SCHEMA):
 
     # Send request to ChatGPT to generate SQL
     headers = {
-        "Authorization": f"Bearer {settings.GPT4_API_KEY}",
+        "Authorization": f"Bearer {GPT4_API_KEY}",
         "Content-Type": "application/json",
     }
 
@@ -137,7 +142,7 @@ async def generate_plot_code(prompt: str, data):
 
     # Send request to ChatGPT to generate Python code for plotting
     headers = {
-        "Authorization": f"Bearer {settings.GPT4_API_KEY}",
+        "Authorization": f"Bearer {GPT4_API_KEY}",
         "Content-Type": "application/json",
     }
 

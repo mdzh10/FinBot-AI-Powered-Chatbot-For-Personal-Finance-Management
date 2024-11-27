@@ -3,15 +3,20 @@ import requests
 from PIL import Image
 import io
 import re
+import os
 from fastapi import UploadFile
 from config.config import settings
-from sqlalchemy.orm import Session
 from schemas.receipt_schema import ItemDetails, ReceiptResponse
 from typing import List
 
 # Replace 'your_gpt4_api_key' with your actual GPT-4 API key
 GPT4_API_URL = "https://api.openai.com/v1/chat/completions"
 MODEL = "gpt-4o"
+
+if settings is not None and settings.GPT4_API_KEY is not None:
+    GPT4_API_KEY = settings.GPT4_API_KEY
+else:
+    GPT4_API_KEY = os.getenv("GPT4_API_KEY")
 
 
 def encode_image(image: Image.Image) -> str:
@@ -25,7 +30,7 @@ def extract_items_from_image(base64_image: str) -> List[ItemDetails]:
     """Sends the base64-encoded image to GPT-4 and extracts items."""
     # Create the payload for GPT-4
     headers = {
-        "Authorization": f"Bearer {settings.GPT4_API_KEY}",
+        "Authorization": f"Bearer {GPT4_API_KEY}",
         "Content-Type": "application/json",
     }
 

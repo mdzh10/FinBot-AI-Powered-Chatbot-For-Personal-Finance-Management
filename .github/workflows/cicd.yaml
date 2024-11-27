@@ -2,8 +2,8 @@ name: Deploy to Cloud Run
 
 env:
   SERVICE_NAME: finbot-fastapi-service
-  PROJECT_ID: finbot-deploy1
-  DOCKER_IMAGE_URL: us-central1-docker.pkg.dev/finbot-deploy1/finbot-fastapi/finbot-fastapi
+  PROJECT_ID: finbotv2
+  DOCKER_IMAGE_URL: us-central1-docker.pkg.dev/finbotv2/finbot-fastapi/finbot-fastapi
 
 on:
   push:

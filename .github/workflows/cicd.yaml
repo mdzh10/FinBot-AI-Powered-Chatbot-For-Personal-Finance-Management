@@ -1,17 +1,17 @@
 name: Deploy to Cloud Run
 
 env:
-  SERVICE_NAME: finbot-fastapi-service
+  SERVICE_NAME: finbot-fastapi
   PROJECT_ID: finbotv2
   DOCKER_IMAGE_URL: us-central1-docker.pkg.dev/finbotv2/finbot-fastapi/finbot-fastapi
 
 on:
   push:
     branches:
-      - main
+      - gcp_deploy_cicd
   pull_request:
     branches:
-      - main
+      - gcp_deploy_cicd
 
 jobs:
   dockerize-and-deploy:

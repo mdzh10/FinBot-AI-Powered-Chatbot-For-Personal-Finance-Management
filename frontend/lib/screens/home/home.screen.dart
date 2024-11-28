@@ -83,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
     final url = Uri.parse(
-        'http://192.168.224.192:8000/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
+        'https://finbot-fastapi-rc4376baha-ue.a.run.app/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
 
     try {
       final responseDashboard = await http.get(url);
@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error: $e');
     }
 
-      final String apiUrl = "http://192.168.224.192:8000/account/"+userId.toString();
+      final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/"+userId.toString();
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: {"Content-Type": "application/json"},

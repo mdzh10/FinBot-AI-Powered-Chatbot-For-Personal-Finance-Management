@@ -10,8 +10,7 @@ from models.transaction import PaymentTypeEnum
 class TransactionCreate(BaseModel):
     user_id: int
     account_id: int
-    category_id: int
-    title: str
+    category_id: Optional[int] = None
     description: Optional[str] = ""
     amount: float
     type: PaymentTypeEnum  # Expected values: "debit" or "credit"

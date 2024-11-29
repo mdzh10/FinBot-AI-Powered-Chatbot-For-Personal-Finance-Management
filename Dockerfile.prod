@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED True
+
+# Set the working directory
+WORKDIR /usr/app/backend
+RUN echo WORKDIR
+
+# Copy requirements file and install dependencies
+COPY ./backend ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Set PYTHONPATH
+ENV PYTHONPATH=/usr/app/backend
+
+# Expose the port
+EXPOSE 8080
+
+# Start the server
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080} --proxy-headers"]

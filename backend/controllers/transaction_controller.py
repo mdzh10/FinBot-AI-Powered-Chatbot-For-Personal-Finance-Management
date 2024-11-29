@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Query
 from sqlalchemy.orm import Session
 from config.db.database import get_db
 from services.transaction_service import (
-    add_transaction,
+    add_transactions,
     get_all_transactions,
     update_transaction,
     delete_transaction_by_id,
@@ -38,10 +38,10 @@ async def get_transactions(
 
 @router.post("/add", response_model=TransactionListResponse)
 async def create_transaction(
-    transaction: TransactionCreate, db: Session = Depends(get_db)
+    transaction: List[TransactionCreate], db: Session = Depends(get_db)
 ):
     try:
-        new_transaction = await add_transaction(db, transaction)
+        new_transaction = await add_transactions(db, transaction)
         return new_transaction
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

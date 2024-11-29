@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from fastapi.params import Query
 from sqlalchemy.orm import Session
 from schemas.account_schema import AccountDetails
@@ -59,6 +59,7 @@ async def get_all_transactions(
             category=category_dict.get(transaction.category_id),
             title=transaction.title,
             description=transaction.description,
+            isExceed=transaction.isExceed,
             amount=transaction.amount,
             type=transaction.type,
             datetime=transaction.datetime,
@@ -73,67 +74,108 @@ async def get_all_transactions(
     )
 
 
-async def add_transaction(
-    db: Session, transaction: TransactionCreate
+async def add_transactions(
+    db: Session, transactions: List[TransactionCreate]
 ) -> TransactionListResponse:
-    # Find the associated account for this transaction
-    new_transaction = Transaction(
-        user_id=transaction.user_id,
-        account_id=transaction.account_id,
-        category_id=transaction.category_id,
-        title=transaction.title,
-        description=transaction.description,
-        amount=transaction.amount,
-        type=(
-            PaymentTypeEnum.debit
-            if transaction.type == "debit"
-            else PaymentTypeEnum.credit
-        ),
-        datetime=transaction.datetime,
-    )
-    db.add(new_transaction)
+    transaction_details_list = []
 
-    # Find the associated account
-    account = db.query(Account).filter(Account.id == new_transaction.account_id).first()
-    category = (
-        db.query(Category).filter(Category.id == new_transaction.category_id).first()
-    )
+    # Assume all transactions belong to the same account (based on first transaction's account_id)
+    if not transactions:
+        raise HTTPException(status_code=400, detail="No transactions provided")
+
+    # Fetch the associated account once
+    account_id = transactions[0].account_id
+    account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
+    
+    # Check if today is the start of the month and reset category expenses if needed
+    today = datetime.now().date()
+    if today.day == 1:
+        db.query(Category).update({Category.expense: 0.0})
+        db.commit()
+        
+    # Fetch categories once for all category_ids in the transactions
+    category_ids = {
+        transaction.category_id
+        for transaction in transactions
+        if transaction.category_id
+    }
+    categories = {
+        category.id: category
+        for category in db.query(Category).filter(Category.id.in_(category_ids)).all()
+    }
 
-    # Update the account balance based on transaction type
-    if new_transaction.type == PaymentTypeEnum.credit:
-        account.balance += new_transaction.amount
-        account.credit += new_transaction.amount  # Track total credits
-    elif new_transaction.type == PaymentTypeEnum.debit:
-        if account.balance < new_transaction.amount:
-            raise HTTPException(status_code=400, detail="Insufficient balance")
-        account.balance -= new_transaction.amount
-        account.debit += new_transaction.amount  # Track total debits
-    category.expense += new_transaction.amount
+    for transaction in transactions:
+        # Ensure the category exists if provided
+        category = categories.get(transaction.category_id)
+        if transaction.category_id and not category:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Category ID {transaction.category_id} not found",
+            )
 
-    db.commit()
-    db.refresh(new_transaction)
+        # Create a new transaction record
+        new_transaction = Transaction(
+            user_id=transaction.user_id,
+            account_id=transaction.account_id,
+            category_id=transaction.category_id,
+            title=transaction.title,
+            description=transaction.description,
+            amount=transaction.amount,
+            type=(
+                PaymentTypeEnum.debit
+                if transaction.type == "debit"
+                else PaymentTypeEnum.credit
+            ),
+            datetime=transaction.datetime,
+        )
+        db.add(new_transaction)
+
+        # Update the account balance based on transaction type
+        if new_transaction.type == PaymentTypeEnum.credit:
+            account.balance += new_transaction.amount
+            account.credit += new_transaction.amount  # Track total credits
+            if category:
+                category.expense -= new_transaction.amount
+        elif new_transaction.type == PaymentTypeEnum.debit:
+            if account.balance < new_transaction.amount:
+                raise HTTPException(status_code=400, detail="Insufficient balance")
+            account.balance -= new_transaction.amount
+            account.debit += new_transaction.amount  # Track total debits
+            if category:
+                category.expense += new_transaction.amount
+
+        # Check if category expense exceeds budget
+        is_exceed = True if category and category.expense > category.budget else False
+
+        db.commit()
+        db.refresh(new_transaction)
+
+        # Convert to Pydantic models
+        account_details = AccountDetails.from_orm(account)
+        category_details = CategoryDetails.from_orm(category) if category else None
+        transaction_details = TransactionDetails(
+            id=new_transaction.id,
+            user_id=new_transaction.user_id,
+            account=account_details,
+            category=category_details,
+            title=new_transaction.title,
+            description=new_transaction.description,
+            isExceed=is_exceed,  # Set isExceed flag
+            amount=new_transaction.amount,
+            type=new_transaction.type,
+            datetime=new_transaction.datetime,
+        )
+        transaction_details_list.append(transaction_details)
+
+    # Refresh account and category after all transactions are processed
     db.refresh(account)
-    db.refresh(category)
-
-    # Convert to Pydantic models
-    account_details = AccountDetails.from_orm(account)
-    category_details = CategoryDetails.from_orm(category)
-    transaction_details = TransactionDetails(
-        id=new_transaction.id,
-        user_id=new_transaction.user_id,
-        account=account_details,
-        category=category_details,
-        title=new_transaction.title,
-        description=new_transaction.description,
-        amount=new_transaction.amount,
-        type=new_transaction.type,
-        datetime=new_transaction.datetime,
-    )
+    for category in categories.values():
+        db.refresh(category)
 
     return TransactionListResponse(
-        msg="Transaction created successfully", transactions=[transaction_details]
+        msg="Transactions created successfully", transactions=transaction_details_list
     )
 
 

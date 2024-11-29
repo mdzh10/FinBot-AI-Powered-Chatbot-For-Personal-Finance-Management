@@ -37,6 +37,7 @@ class TransactionDetails(BaseModel):
     category: Optional[CategoryDetails] = None
     title: Optional[str] = None
     description: Optional[str] = None
+    isExceed: Optional[bool] = None
     amount: Optional[float] = None
     type: Optional[PaymentTypeEnum] = None  # "debit" or "credit"
     datetime: datetime

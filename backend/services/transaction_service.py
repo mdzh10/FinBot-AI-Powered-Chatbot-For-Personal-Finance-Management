@@ -59,6 +59,7 @@ async def get_all_transactions(
             category=category_dict.get(transaction.category_id),
             title=transaction.title,
             description=transaction.description,
+            isExceed=transaction.isExceed,
             amount=transaction.amount,
             type=transaction.type,
             datetime=transaction.datetime,
@@ -87,7 +88,13 @@ async def add_transactions(
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-
+    
+    # Check if today is the start of the month and reset category expenses if needed
+    today = datetime.now().date()
+    if today.day == 1:
+        db.query(Category).update({Category.expense: 0.0})
+        db.commit()
+        
     # Fetch categories once for all category_ids in the transactions
     category_ids = {
         transaction.category_id
@@ -139,6 +146,9 @@ async def add_transactions(
             if category:
                 category.expense += new_transaction.amount
 
+        # Check if category expense exceeds budget
+        is_exceed = True if category and category.expense > category.budget else False
+
         db.commit()
         db.refresh(new_transaction)
 
@@ -152,6 +162,7 @@ async def add_transactions(
             category=category_details,
             title=new_transaction.title,
             description=new_transaction.description,
+            isExceed=is_exceed,  # Set isExceed flag
             amount=new_transaction.amount,
             type=new_transaction.type,
             datetime=new_transaction.datetime,

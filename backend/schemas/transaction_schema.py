@@ -11,6 +11,7 @@ class TransactionCreate(BaseModel):
     user_id: int
     account_id: int
     category_id: Optional[int] = None
+    title: str
     description: Optional[str] = ""
     amount: float
     type: PaymentTypeEnum  # Expected values: "debit" or "credit"

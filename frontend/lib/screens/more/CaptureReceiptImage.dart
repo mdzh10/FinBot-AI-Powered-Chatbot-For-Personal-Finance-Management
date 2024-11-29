@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -163,13 +162,19 @@ class ImageEditPage extends StatefulWidget {
 }
 
 class _ImageEditPageState extends State<ImageEditPage> {
-  TextEditingController _apiResponseController = TextEditingController();
+  late List<Item> _editableItems;
 
   @override
   void initState() {
     super.initState();
-    // Set the API response text when the page loads
-    _apiResponseController.text = widget.receipt.msg;
+    // Initialize the list of items for editing
+    _editableItems = widget.receipt.items.map((item) => Item(
+      id: item.id,
+      itemName: item.itemName,
+      category: item.category,
+      price: item.price,
+      quantity: item.quantity,
+    )).toList();
   }
 
   @override
@@ -179,21 +184,21 @@ class _ImageEditPageState extends State<ImageEditPage> {
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Image.file(widget.image, height: 200),
             SizedBox(height: 20),
-            TextField(
-              controller: _apiResponseController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Receipt Details',
-              ),
+            Text(
+              widget.receipt.msg,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
             Text('Receipt Items:', style: TextStyle(fontWeight: FontWeight.bold)),
-            for (var item in widget.receipt.items) ...[
-              Text('${item.itemName} - ${item.quantity} x \$${item.price}'),
+            SizedBox(height: 10),
+            // Display and edit items
+            for (int i = 0; i < _editableItems.length; i++) ...[
+              _buildItemEditRow(i),
+              SizedBox(height: 10),
             ],
             SizedBox(height: 20),
             Row(
@@ -202,7 +207,7 @@ class _ImageEditPageState extends State<ImageEditPage> {
                 ElevatedButton(
                   onPressed: () {
                     // Save details and go back to capture page
-                    Navigator.pop(context);
+                    Navigator.pop(context, _editableItems);
                   },
                   child: Text('Save'),
                 ),
@@ -218,6 +223,69 @@ class _ImageEditPageState extends State<ImageEditPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildItemEditRow(int index) {
+    Item item = _editableItems[index];
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: TextEditingController(text: item.itemName),
+            decoration: InputDecoration(labelText: 'Item Name'),
+            onChanged: (value) {
+              setState(() {
+                _editableItems[index] = Item(
+                  id: item.id,
+                  itemName: value,
+                  category: item.category,
+                  price: item.price,
+                  quantity: item.quantity,
+                );
+              });
+            },
+          ),
+        ),
+        SizedBox(width: 10),
+        Expanded(
+          child: TextField(
+            keyboardType: TextInputType.number,
+            controller: TextEditingController(text: item.quantity.toString()),
+            decoration: InputDecoration(labelText: 'Quantity'),
+            onChanged: (value) {
+              setState(() {
+                _editableItems[index] = Item(
+                  id: item.id,
+                  itemName: item.itemName,
+                  category: item.category,
+                  price: item.price,
+                  quantity: int.tryParse(value) ?? item.quantity,
+                );
+              });
+            },
+          ),
+        ),
+        SizedBox(width: 10),
+        Expanded(
+          child: TextField(
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            controller: TextEditingController(text: item.price.toStringAsFixed(2)),
+            decoration: InputDecoration(labelText: 'Price'),
+            onChanged: (value) {
+              setState(() {
+                _editableItems[index] = Item(
+                  id: item.id,
+                  itemName: item.itemName,
+                  category: item.category,
+                  price: double.tryParse(value) ?? item.price,
+                  quantity: item.quantity,
+                );
+              });
+            },
+          ),
+        ),
+      ],
     );
   }
 }

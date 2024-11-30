@@ -35,9 +35,7 @@ class PaymentForm extends StatefulWidget{
 class _PaymentForm extends State<PaymentForm>{
   bool _initialised = false;
   bool _isLoading = false;
-  // final PaymentDao _paymentDao = PaymentDao();
-  // final AccountDao _accountDao = AccountDao();
-  // final CategoryDao _categoryDao = CategoryDao();
+
 
   EventListener? _accountEventListener;
   EventListener? _categoryEventListener;
@@ -53,6 +51,7 @@ class _PaymentForm extends State<PaymentForm>{
   String? _description="";
   Account? _account;
   Category? _category;
+  bool? _isExceed;
   double? _amount=0;
   TransactionType? _type= TransactionType.credit;
   DateTime? _datetime = DateTime.now();
@@ -62,7 +61,7 @@ class _PaymentForm extends State<PaymentForm>{
       _isLoading = true;
     });
 
-    final String apiUrl = "http://192.168.1.33:8000/account/" + widget.userId.toString();
+    final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/" + widget.userId.toString();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},
@@ -89,7 +88,7 @@ class _PaymentForm extends State<PaymentForm>{
       _isLoading = true;
     });
 
-    final String apiUrl = "http://192.168.1.33:8000/category/" + widget.userId.toString();
+    final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/category/" + widget.userId.toString();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},
@@ -120,6 +119,7 @@ class _PaymentForm extends State<PaymentForm>{
         _category = widget.transaction!.category;
         _amount = widget.transaction!.amount;
         _type = widget.transaction!.type;
+        // _isExceed = widget.transaction?.isExceed;
         _datetime = widget.transaction!.datetime;
         _initialised = true;
       });
@@ -189,23 +189,27 @@ class _PaymentForm extends State<PaymentForm>{
     );
 
     if (transaction.id == null) {
-      final url = Uri.parse('http://192.168.1.33:8000/transaction/add');
+      final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/add');
 
       final headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
 
-      final body = jsonEncode({
+      final body = jsonEncode([{
         "user_id": widget.userId,
         "account_id": _account?.id,
         "category_id": _category?.id,
         "title": _title,
         "description": _description,
         "amount": _amount,
-        "type": _type,
-        "datetime": _datetime,
-      });
+        "type": _type?.toJson(),
+        "datetime": _datetime?.toIso8601String(),
+        "isExceed": false,
+      }]);
+
+      print("Request Body: $body");
+
 
       try {
         final response = await http.post(url, headers: headers, body: body);
@@ -216,7 +220,21 @@ class _PaymentForm extends State<PaymentForm>{
           if (responseData['isSuccess']) {
             print("Transaction added successfully!");
             print("Response Message: ${responseData['msg']}");
-            print("Transactions: ${responseData['transactions']}");
+            final List<dynamic> transactionsJson = responseData['transactions'];
+            final List<Transaction> transactions = transactionsJson
+                .map((transactionJson) => Transaction.fromJson(transactionJson))
+                .toList();
+
+            // Filter the transactions where isExceed is false
+            final List<Transaction> nonExceedTransactions = transactions
+                .where((transaction) => transaction.isExceed == false)
+                .toList();
+            // Log the filtered transactions
+            print("Non-Exceed Transactions:");
+            for (var transaction in nonExceedTransactions) {
+              print(transaction.toJson());
+            }
+
           } else {
             print("Failed to add transaction: ${responseData['msg']}");
           }
@@ -228,13 +246,13 @@ class _PaymentForm extends State<PaymentForm>{
         print("Exception occurred: $e");
       }
     } else {
-      final url = Uri.parse('http://192.168.1.33:8000/transaction/modify'); // Replace with your API URL
+      final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/modify'); // Replace with your API URL
       final headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
 
-      final body = jsonEncode({
+      final body = jsonEncode([{
         "id": transaction.id,
         "user_id": widget.userId,
         "account_id": _account?.id,
@@ -244,7 +262,7 @@ class _PaymentForm extends State<PaymentForm>{
         "amount": _amount,
         "type": _type?.toJson(),
         "datetime": _datetime?.toIso8601String(),
-      });
+      }]);
 
       try {
         final response = await http.put(url, headers: headers, body: body);
@@ -276,6 +294,31 @@ class _PaymentForm extends State<PaymentForm>{
     Navigator.of(context).pop();
     // globalEvent.emit("payment_update");
   }
+
+  Future<void> deleteTransaction(int transactionId) async {
+    final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/delete/$transactionId'); // Replace with the actual endpoint URL
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json', // Ensure the correct content type is set
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('Transaction deleted successfully: ${response.body}');
+      } else if (response.statusCode == 422) {
+        print('Validation Error: ${response.body}');
+      } else {
+        print('Failed to delete transaction: ${response.statusCode}, ${response.body}');
+      }
+    } catch (error) {
+      print('Error occurred: $error');
+    }
+  }
+
+
 
 
 
@@ -317,11 +360,11 @@ class _PaymentForm extends State<PaymentForm>{
                   onPressed: (){
                     ConfirmModal.showConfirmDialog(context, title: "Are you sure?", content: const Text("After deleting payment can't be recovered."),
                         onConfirm: (){
-                          // _paymentDao.deleteTransaction(_id!).then((value) {
-                          //   // globalEvent.emit("payment_update");
-                          //   Navigator.pop(context);
-                          //   Navigator.pop(context);
-                          // });
+                          deleteTransaction(_id!).then((value) {
+                            // globalEvent.emit("payment_update");
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          });
                         },
                         onCancel: (){
                           Navigator.pop(context);

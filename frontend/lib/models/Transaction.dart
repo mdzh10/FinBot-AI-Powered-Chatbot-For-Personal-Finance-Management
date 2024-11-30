@@ -41,6 +41,7 @@ class Transaction {
   final Category? category;
   final String? title;
   final String? description;
+  bool? isExceed;
   final double? amount;
   final TransactionType? type;
   final DateTime? datetime;
@@ -52,6 +53,7 @@ class Transaction {
     required this.category,
     required this.title,
     required this.description,
+    this.isExceed,
     required this.amount,
     required this.type,
     required this.datetime,
@@ -66,6 +68,7 @@ class Transaction {
       category: Category.fromJson(json['category']),
       title: json['title'],
       description: json['description'],
+      isExceed: json['isExceed'],
       amount: json['amount'].toDouble(),
       type: TransactionTypeExtension.fromString(json["type"]),
       datetime: DateTime.parse(json['datetime']),
@@ -84,7 +87,9 @@ class Transaction {
       'amount': amount,
       'type': type?.toJson(),
       'datetime': datetime?.toIso8601String(),
+      // 'isExceed' is excluded here
     };
   }
+
 }
 

@@ -51,8 +51,8 @@ class _CategoryForm extends State<CategoryForm> {
 
     try {
       final url = _category?.id == null
-          ? Uri.parse('http://192.168.1.33:8000/category/create')
-          : Uri.parse('http://192.168.1.33:8000/category/update');
+          ? Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/category/create')
+          : Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/category/update');
 
       final response = _category?.id == null
           ? await http.post(

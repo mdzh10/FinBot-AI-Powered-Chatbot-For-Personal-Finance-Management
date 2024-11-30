@@ -164,7 +164,7 @@ class _MoreScreenState extends State<MoreScreen> {
                   title: "Are you sure?",
                   content: const Text("You want to log out"),
                   onConfirm: () async {
-                    final String apiUrl = 'http://192.168.1.33:8000/auth/logout'; // Set your API URL
+                    final String apiUrl = 'https://finbot-fastapi-rc4376baha-ue.a.run.app/auth/logout'; // Set your API URL
                     String? token = await context.read<AppCubit>().getAccessToken(); // Await the token retrieval
 
                     // Show loading indicator

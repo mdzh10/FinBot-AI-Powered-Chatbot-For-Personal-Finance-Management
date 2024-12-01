@@ -123,11 +123,7 @@ async def add_transactions(
             title=transaction.title,
             description=transaction.description,
             amount=transaction.amount,
-            type=(
-                PaymentTypeEnum.debit
-                if transaction.type == "debit"
-                else PaymentTypeEnum.credit
-            ),
+            type=transaction.type,
             datetime=transaction.datetime,
         )
         db.add(new_transaction)
@@ -136,8 +132,6 @@ async def add_transactions(
         if new_transaction.type == PaymentTypeEnum.credit:
             account.balance += new_transaction.amount
             account.credit += new_transaction.amount  # Track total credits
-            if category:
-                category.expense -= new_transaction.amount
         elif new_transaction.type == PaymentTypeEnum.debit:
             if account.balance < new_transaction.amount:
                 raise HTTPException(status_code=400, detail="Insufficient balance")
@@ -172,8 +166,10 @@ async def add_transactions(
         transaction_details_list.append(transaction_details)
 
     # Refresh account and category after all transactions are processed
+    db.commit()
     db.refresh(account)
     for category in categories.values():
+        db.commit()
         db.refresh(category)
 
     return TransactionListResponse(

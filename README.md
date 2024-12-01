@@ -14,5 +14,5 @@ Adjustments to Deployment Steps
 Run Locally for Testing:
 `docker run -d -p 8000:8000 fastapi-backend`
 
-# Deployed linkin GCP:
+Deployed linkin GCP:
 `https://finbot-fastapi-rc4376baha-ue.a.run.app/docs`

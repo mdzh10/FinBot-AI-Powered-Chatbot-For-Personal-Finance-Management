@@ -47,16 +47,14 @@ class _HomeScreenState extends State<HomeScreen> {
   AccountResponseModel? accountResponseModel;
   DashboardResponseModel? dashboardResponseModel;
   TransactionResponse? transactionResponse;
+  bool _isLoading = false;
 
-  double _income = 0;
-  double _expense = 0;
-  //double _savings = 0;
+
   DateTimeRange _range = DateTimeRange(
       start: DateTime.now().subtract(Duration(days: DateTime.now().day -1)),
       end: DateTime.now()
   );
-  Account? _account;
-  // Category? _category;
+
 
   void openAddPaymentPage(TransactionType type) async {
     Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: type, userId: widget.userId,)));
@@ -78,71 +76,71 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _fetchTransactions(int? userId) async {
+    setState(() {
+      _isLoading = true; // Start loading
+    });
 
     final queryParameters = {
-      'start_date': _range.start.toIso8601String(), // Use the selected date range
+      'start_date': _range.start.toIso8601String(),
       'end_date': _range.end.toIso8601String(),
     };
 
     final uriTrans = Uri.parse("https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/$userId")
         .replace(queryParameters: queryParameters);
 
-    print('API URL: $uriTrans');
-
-
-    final url = Uri.parse(
-        'https://finbot-fastapi-rc4376baha-ue.a.run.app/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
-
     try {
       final responseTrans = await http.get(uriTrans);
+      print('API URL: $uriTrans');
       print('Response Status: ${responseTrans.statusCode}');
       print('Response Body: ${responseTrans.body}');
 
       if (responseTrans.statusCode == 200) {
-        // Decode JSON and create the TransactionResponse object
         final Map<String, dynamic> json = jsonDecode(responseTrans.body);
         transactionResponse = TransactionResponse.fromJson(json);
       } else {
-        print('Failed to load data: ${transactionResponse}');
+        print('Failed to load transactions: ${responseTrans.statusCode}');
       }
+
+      final url = Uri.parse(
+          'https://finbot-fastapi-rc4376baha-ue.a.run.app/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
       final responseDashboard = await http.get(url);
 
       if (responseDashboard.statusCode == 200) {
         final data = jsonDecode(responseDashboard.body);
         dashboardResponseModel = DashboardResponseModel.fromJson(data);
       } else {
-        print('Failed to load data: ${responseDashboard.statusCode}');
+        print('Failed to load dashboard data: ${responseDashboard.statusCode}');
       }
-    } catch (e) {
-      print('Error: $e');
-    }
 
-      final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/"+userId.toString();
+      final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/$userId";
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: {"Content-Type": "application/json"},
       );
-      print(json.decode(response.body));
+
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = jsonDecode(response.body);
         accountResponseModel = AccountResponseModel.fromJson(data);
       } else {
         throw Exception('Failed to load accounts');
       }
 
+      List<Account>? accounts = accountResponseModel?.accounts;
+      List<Transaction>? transactions = transactionResponse?.transactions;
 
-
-    //fetch accounts
-    List<Account>? accounts = accountResponseModel?.accounts;
-    List<Transaction>? transactions = transactionResponse?.transactions;
-
-    setState(() {
-      _transactions = transactions != null? transactions : [];
-      // _income = income;
-      // _expense = expense;
-      _accounts = accounts != null? accounts : [];
-    });
+      setState(() {
+        _transactions = transactions ?? [];
+        _accounts = accounts ?? [];
+      });
+    } catch (e) {
+      print('Error: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // Stop loading
+      });
+    }
   }
+
 
 
   @override
@@ -154,14 +152,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _accountEventListener?.cancel();
-    // _categoryEventListener?.cancel();
     _paymentEventListener?.cancel();
     super.dispose();
   }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
+      body: _isLoading ? Center(
+        child: CircularProgressIndicator(),
+      ) : SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -173,7 +172,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text("Hi! Good ${greeting()}"),
                     BlocConsumer<AppCubit, AppState>(
                         listener: (context, state){
-
                         },
                         builder: (context, state)=>Text(state.userName ?? "Guest", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),)
                     )

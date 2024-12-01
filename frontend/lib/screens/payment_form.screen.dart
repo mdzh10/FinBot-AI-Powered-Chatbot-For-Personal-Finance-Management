@@ -177,8 +177,8 @@ class _PaymentForm extends State<PaymentForm>{
 
   void handleSaveTransaction(context) async {
     Transaction transaction = Transaction(id: _id,
-        account: _account!,
-        category: _category!,
+        account: _account,
+        category: _category,
         amount: _amount,
         type: _type,
         datetime: _datetime,
@@ -617,101 +617,107 @@ class _PaymentForm extends State<PaymentForm>{
                               ),
                             ),
 
-                            Container(
-                              padding: const EdgeInsets.only(left: 15, bottom: 15),
-                              child: const Text("Select Category", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),),
+                            Visibility(
+                              visible: _type != TransactionType.credit,
+                              child: Container(
+                                padding: const EdgeInsets.only(left: 15, bottom: 15),
+                                child: const Text("Select Category", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),),
+                              ),
                             ),
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 25, left: 15, right: 15),
-                              width: double.infinity,
-                              child: Wrap(
-                                  spacing: 10,
-                                  runSpacing: 10,
-                                  children: List.generate(_categories.length + 1, (index){
-                                    if(_categories.length == index){
+                            Visibility(
+                              visible: _type != TransactionType.credit,
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 25, left: 15, right: 15),
+                                width: double.infinity,
+                                child: Wrap(
+                                    spacing: 10,
+                                    runSpacing: 10,
+                                    children: List.generate(_categories.length + 1, (index){
+                                      if(_categories.length == index){
+                                        return ConstrainedBox(
+                                            constraints:   const BoxConstraints(minWidth: 0,),
+                                            child:  IntrinsicWidth(
+                                              child:MaterialButton(
+                                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(15),
+                                                      side: const BorderSide(
+                                                          width: 1.5,
+                                                          color: Colors.transparent
+                                                      )
+                                                  ),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
+                                                  elevation: 0,
+                                                  focusElevation: 0,
+                                                  hoverElevation: 0,
+                                                  highlightElevation: 0,
+                                                  disabledElevation: 0,
+                                                  onPressed: (){
+                                                    showDialog(context: context, builder: (builder)=> CategoryForm(userId: widget.userId,
+                                                      onSave: () {
+                                                        loadCategories(); // Refresh accounts list after saving
+                                                      },));
+                                                  },
+                                                  child:  SizedBox(
+                                                    width: double.infinity,
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.add, color: Theme.of(context).colorScheme.primary,),
+                                                        const SizedBox(width: 10,),
+                                                        Text("New Category", style: Theme.of(context).textTheme.bodyMedium),
+                                                      ],
+                                                    ),
+                                                  )
+                                              ),
+                                            )
+                                        );
+                                      }
+                                      Category category = _categories[index];
                                       return ConstrainedBox(
                                           constraints:   const BoxConstraints(minWidth: 0,),
                                           child:  IntrinsicWidth(
-                                            child:MaterialButton(
-                                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(15),
-                                                    side: const BorderSide(
-                                                        width: 1.5,
-                                                        color: Colors.transparent
-                                                    )
-                                                ),
-                                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
-                                                elevation: 0,
-                                                focusElevation: 0,
-                                                hoverElevation: 0,
-                                                highlightElevation: 0,
-                                                disabledElevation: 0,
-                                                onPressed: (){
-                                                  showDialog(context: context, builder: (builder)=> CategoryForm(userId: widget.userId,
-                                                    onSave: () {
-                                                      loadCategories(); // Refresh accounts list after saving
-                                                    },));
-                                                },
-                                                child:  SizedBox(
-                                                  width: double.infinity,
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(Icons.add, color: Theme.of(context).colorScheme.primary,),
-                                                      const SizedBox(width: 10,),
-                                                      Text("New Category", style: Theme.of(context).textTheme.bodyMedium),
-                                                    ],
+                                              child:MaterialButton(
+                                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(15),
+                                                      side: BorderSide(
+                                                          width: 1.5,
+                                                          color: _category?.id == category.id ? Theme.of(context).colorScheme.primary : Colors.transparent
+                                                      )
                                                   ),
-                                                )
-                                            ),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
+                                                  elevation: 0,
+                                                  focusElevation: 0,
+                                                  hoverElevation: 0,
+                                                  highlightElevation: 0,
+                                                  disabledElevation: 0,
+                                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                  onPressed: (){
+                                                    setState(() {
+                                                      _category = category;
+                                                    });
+                                                  },
+                                                  onLongPress: (){
+                                                    showDialog(context: context, builder: (builder)=>CategoryForm(category: category,));
+                                                  },
+                                                  child:  SizedBox(
+                                                    width: double.infinity,
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.category_outlined, color: Colors.pink),
+                                                        const SizedBox(width: 10,),
+                                                        Text(category.name, style: Theme.of(context).textTheme.bodyMedium, overflow: TextOverflow.ellipsis,),
+                                                      ],
+                                                    ),
+                                                  )
+                                              )
                                           )
                                       );
-                                    }
-                                    Category category = _categories[index];
-                                    return ConstrainedBox(
-                                        constraints:   const BoxConstraints(minWidth: 0,),
-                                        child:  IntrinsicWidth(
-                                            child:MaterialButton(
-                                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(15),
-                                                    side: BorderSide(
-                                                        width: 1.5,
-                                                        color: _category?.id == category.id ? Theme.of(context).colorScheme.primary : Colors.transparent
-                                                    )
-                                                ),
-                                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
-                                                elevation: 0,
-                                                focusElevation: 0,
-                                                hoverElevation: 0,
-                                                highlightElevation: 0,
-                                                disabledElevation: 0,
-                                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                onPressed: (){
-                                                  setState(() {
-                                                    _category = category;
-                                                  });
-                                                },
-                                                onLongPress: (){
-                                                  showDialog(context: context, builder: (builder)=>CategoryForm(category: category,));
-                                                },
-                                                child:  SizedBox(
-                                                  width: double.infinity,
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(Icons.category_outlined, color: Colors.pink),
-                                                      const SizedBox(width: 10,),
-                                                      Text(category.name, style: Theme.of(context).textTheme.bodyMedium, overflow: TextOverflow.ellipsis,),
-                                                    ],
-                                                  ),
-                                                )
-                                            )
-                                        )
-                                    );
 
-                                  })
+                                    })
 
+                                ),
                               ),
                             )
                           ],
@@ -726,8 +732,10 @@ class _PaymentForm extends State<PaymentForm>{
                   height: 50,
                   labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   isFullWidth: true,
-                  onPressed: _amount! > 0 && _account!=null && _category!=null ? (){
-                    handleSaveTransaction(context);
+                  onPressed: _amount! > 0 && _account!=null  ? (){
+                    if((_type == TransactionType.debit && _category!=null) || _type == TransactionType.credit) {
+                      handleSaveTransaction(context);
+                    }
                   } : null,
                   color: Theme.of(context).colorScheme.primary,
                 ),

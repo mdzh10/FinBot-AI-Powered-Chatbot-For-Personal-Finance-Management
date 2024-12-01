@@ -25,7 +25,6 @@ class Transaction(Base):
     datetime = Column(DateTime, default=datetime.utcnow)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    isExceed = Column(String, nullable=False, default=False)
 
     # Relationships to Account and Category
     account = relationship("Account", back_populates="transactions")

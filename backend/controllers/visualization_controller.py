@@ -1,17 +1,18 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from schemas.visualization_schema import VisualizationRequest, VisualizationResponse
 from services.visualization_service import generate_visualization
-from config.db.database import get_db
-from sqlalchemy.orm import Session
 
 router = APIRouter()
 
 
 @router.post("/generate-plots/", response_model=VisualizationResponse)
 async def generate_plots(request: VisualizationRequest):
-    result = await generate_visualization(request.prompt)
+    result = await generate_visualization(request.prompt, request.showPopup)
 
-    if not result:
-        raise HTTPException(status_code=500, detail="Failed to generate visualization.")
+    if not result or not result["isSuccess"]:
+        raise HTTPException(
+            status_code=500,
+            detail=result.get("msg", "Failed to generate visualization."),
+        )
 
     return result

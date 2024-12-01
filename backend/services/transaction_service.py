@@ -59,7 +59,6 @@ async def get_all_transactions(
             category=category_dict.get(transaction.category_id),
             title=transaction.title,
             description=transaction.description,
-            isExceed=transaction.isExceed,
             amount=transaction.amount,
             type=transaction.type,
             datetime=transaction.datetime,

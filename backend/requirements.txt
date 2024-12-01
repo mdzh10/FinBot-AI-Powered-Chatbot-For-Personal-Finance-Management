@@ -13,4 +13,4 @@ pillow==10.4.0
 python-multipart==0.0.9
 matplotlib==3.9.2
 pytest_mock==3.14.0
-pytest-asyncio=0.24.0
+pytest_asyncio=0.24.0

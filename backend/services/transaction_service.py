@@ -77,6 +77,7 @@ async def add_transactions(
     db: Session, transactions: List[TransactionCreate]
 ) -> TransactionListResponse:
     transaction_details_list = []
+    is_exceed = False
 
     # Assume all transactions belong to the same account (based on first transaction's account_id)
     if not transactions:
@@ -87,13 +88,13 @@ async def add_transactions(
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    
+
     # Check if today is the start of the month and reset category expenses if needed
     today = datetime.now().date()
     if today.day == 1:
         db.query(Category).update({Category.expense: 0.0})
         db.commit()
-        
+
     # Fetch categories once for all category_ids in the transactions
     category_ids = {
         transaction.category_id
@@ -146,7 +147,9 @@ async def add_transactions(
                 category.expense += new_transaction.amount
 
         # Check if category expense exceeds budget
-        is_exceed = True if category and category.expense > category.budget else False
+        if category and category.expense and category.budget:
+            if category.expense > category.budget:
+                is_exceed = True
 
         db.commit()
         db.refresh(new_transaction)

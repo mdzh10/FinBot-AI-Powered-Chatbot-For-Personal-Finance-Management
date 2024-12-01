@@ -5,7 +5,7 @@ from datetime import datetime
 from unittest.mock import MagicMock
 from models.transaction import PaymentTypeEnum
 from services.transaction_service import (
-    add_transaction,  # Update the function names if they are different in your code
+    add_transactions,  # Update the function names if they are different in your code
     get_all_transactions,
     update_transaction,
     delete_transaction_by_id,
@@ -49,7 +49,7 @@ mock_delete_response = {"isSuccess": True, "msg": "Transaction deleted successfu
 def mock_db_services(mocker):
     """Fixture to mock database services"""
     # Mock the database calls for create, get, update, and delete transactions
-    mocker.patch("services.transaction_service.add_transaction", return_value=mock_create_response)
+    mocker.patch("services.transaction_service.add_transactions", return_value=mock_create_response)
     mocker.patch("services.transaction_service.get_all_transactions", return_value=mock_transactions_list)
     mocker.patch("services.transaction_service.update_transaction", return_value=mock_update_response)
     mocker.patch("services.transaction_service.delete_transaction_by_id", return_value=mock_delete_response)

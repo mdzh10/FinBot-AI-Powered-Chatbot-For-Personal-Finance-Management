@@ -8,7 +8,7 @@ from utils.utils import generate_database_schema, extract_sql_code, extract_pyth
 from config.config import settings
 from config.db.database import engine
 
-# prompt = "generate a bar plot comparing total debit and credit for the month of October 2024 for user 1"
+# prompt = "generate a bar plot comparing total debit and credit for the month of November 2024 for user 1"
 CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions"
 MODEL = "gpt-4o"
 if settings is not None and settings.GPT4_API_KEY is not None:
@@ -17,7 +17,7 @@ else:
     GPT4_API_KEY = os.getenv("GPT4_API_KEY")
 
 
-async def generate_visualization(prompt: str):
+async def generate_visualization(prompt: str, showPopup: bool):
     # Dynamically generate the database schema
     DATABASE_SCHEMA = generate_database_schema()
     # print(DATABASE_SCHEMA)
@@ -27,10 +27,9 @@ async def generate_visualization(prompt: str):
 
     if not sql_query:
         return {
-            "chart": None,
-            "analysis": "Failed to generate SQL query for data extraction",
             "isSuccess": False,
             "msg": "Failed to generate SQL query for data extraction",
+            "chart": None,
         }
 
     # Step 2: Execute SQL query to fetch data
@@ -39,10 +38,9 @@ async def generate_visualization(prompt: str):
 
     if data is None:
         return {
-            "chart": None,
-            "analysis": "Failed to fetch data with generated SQL query",
             "isSuccess": False,
             "msg": "Failed to fetch data with generated SQL query",
+            "chart": None,
         }
 
     # Step 3: Generate Python code to create the plot with fetched data
@@ -52,29 +50,31 @@ async def generate_visualization(prompt: str):
 
     if not python_code:
         return {
-            "chart": None,
-            "analysis": "Failed to generate Python code for visualization",
             "isSuccess": False,
             "msg": "Failed to generate Python code for visualization",
+            "chart": None,
         }
 
     # Step 4: Execute the generated Python code to create the chart
-    chart_image = execute_generated_code(python_code)
-
+    chart_image = execute_generated_code(python_code, showPopup)
+    if showPopup:
+        return {
+            "isSuccess": True,
+            "msg": "Visualization was displayed successfully.",
+            "chart": None,
+        }
     if not chart_image:
         return {
-            "chart": None,
-            "analysis": "Failed to generate the chart image",
             "isSuccess": False,
-            "msg": "Failed to generate the chart image",
+            "msg": "Chart generation failed.",
+            "chart": None,
         }
 
-    # Successful response with chart and analysis
+    # Successful response
     return {
-        "chart": chart_image,
-        "analysis": "Visualization generated successfully",
         "isSuccess": True,
-        "msg": "Visualization generated successfully",
+        "msg": "Visualization was created successfully.",
+        "chart": chart_image,
     }
 
 
@@ -165,17 +165,45 @@ async def generate_plot_code(prompt: str, data):
     return python_code
 
 
-def execute_generated_code(python_code: str):
+def execute_generated_code(python_code: str, showPopup: bool):
     local_vars = {}
     try:
-        # Execute the generated Python code
-        exec(
-            python_code, {"plt": plt, "BytesIO": BytesIO, "base64": base64}, local_vars
-        )
-        img_buffer = local_vars.get("img_buffer")
+        if showPopup:
+            # Allow the plot to be displayed
+            exec(python_code, {"plt": plt}, local_vars)
+            return None  # No Base64 image if showing popup
+        else:
+            # Replace plt.show() with code to save the plot to img_buffer
+            modified_code = python_code.replace(
+                "plt.show()",
+                "plt.savefig(img_buffer, format='png'); img_buffer.seek(0)",
+            )
 
-        if img_buffer:
-            return f"data:image/png;base64,{base64.b64encode(img_buffer.getvalue()).decode('utf-8')}"
+            # Prepare an in-memory buffer
+            img_buffer = BytesIO()
+
+            # Inject the buffer into the execution environment
+            exec(
+                modified_code,
+                {
+                    "plt": plt,
+                    "BytesIO": BytesIO,
+                    "base64": base64,
+                    "img_buffer": img_buffer,
+                },
+                local_vars,
+            )
+
+            # Ensure the buffer contains data
+            if img_buffer.getbuffer().nbytes == 0:
+                print("Error: No data in the buffer after saving the plot.")
+                return None
+
+            # Encode the buffer content in Base64
+            encoded_image = f"data:image/png;base64,{base64.b64encode(img_buffer.getvalue()).decode('utf-8')}"
+
+            return encoded_image
+
     except Exception as e:
         print(f"Error executing generated code: {e}")
-    return None
+        return None

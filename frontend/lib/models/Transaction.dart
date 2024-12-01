@@ -63,17 +63,18 @@ class Transaction {
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
       id: json['id'],
-      account: Account.fromJson(json['account']),
+      account: json['account'] != null ? Account.fromJson(json['account']) : null,
       userId: json['user_id'],
-      category: Category.fromJson(json['category']),
+      category: json['category'] != null ? Category.fromJson(json['category']) : null,
       title: json['title'],
       description: json['description'],
       isExceed: json['isExceed'],
-      amount: json['amount'].toDouble(),
-      type: TransactionTypeExtension.fromString(json["type"]),
-      datetime: DateTime.parse(json['datetime']),
+      amount: (json['amount'] as num?)?.toDouble(),
+      type: json['type'] != null ? TransactionTypeExtension.fromString(json['type']) : null,
+      datetime: json['datetime'] != null ? DateTime.parse(json['datetime']) : DateTime.now(),
     );
   }
+
 
   // Convert a Transaction to JSON
   Map<String, dynamic> toJson() {

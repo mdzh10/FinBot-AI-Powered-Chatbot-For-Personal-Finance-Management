@@ -21,7 +21,7 @@ import '../widgets/dialog/confirm.modal.dart';
 typedef OnCloseCallback = Function(Transaction transaction);
 final DateFormat formatter = DateFormat('dd/MM/yyyy hh:mm a');
 class PaymentForm extends StatefulWidget{
-  final TransactionType  type;
+  final TransactionType? type;
   final Transaction? transaction;
   final OnCloseCallback? onClose;
   final int? userId;
@@ -53,7 +53,7 @@ class _PaymentForm extends State<PaymentForm>{
   Category? _category;
   bool? _isExceed;
   double? _amount=0;
-  TransactionType? _type= TransactionType.credit;
+  TransactionType? _type;
   DateTime? _datetime = DateTime.now();
 
   loadAccounts() async {
@@ -119,7 +119,6 @@ class _PaymentForm extends State<PaymentForm>{
         _category = widget.transaction!.category;
         _amount = widget.transaction!.amount;
         _type = widget.transaction!.type;
-        // _isExceed = widget.transaction?.isExceed;
         _datetime = widget.transaction!.datetime;
         _initialised = true;
       });
@@ -252,7 +251,7 @@ class _PaymentForm extends State<PaymentForm>{
         'Accept': 'application/json',
       };
 
-      final body = jsonEncode([{
+      final body = jsonEncode({
         "id": transaction.id,
         "user_id": widget.userId,
         "account_id": _account?.id,
@@ -261,8 +260,8 @@ class _PaymentForm extends State<PaymentForm>{
         "description": _description,
         "amount": _amount,
         "type": _type?.toJson(),
-        "datetime": _datetime?.toIso8601String(),
-      }]);
+        "datetime": _datetime?.toIso8601String()
+      });
 
       try {
         final response = await http.put(url, headers: headers, body: body);
@@ -292,7 +291,6 @@ class _PaymentForm extends State<PaymentForm>{
       widget.onClose!(transaction);
     }
     Navigator.of(context).pop();
-    // globalEvent.emit("payment_update");
   }
 
   Future<void> deleteTransaction(int transactionId) async {
@@ -319,28 +317,14 @@ class _PaymentForm extends State<PaymentForm>{
   }
 
 
-
-
-
-
   @override
   void initState()  {
     super.initState();
     populateState();
-    // _accountEventListener = globalEvent.on("account_update", (data){
-    //   debugPrint("accounts are changed");
-    //   loadAccounts();
-    // });
-    //
-    // _categoryEventListener = globalEvent.on("category_update", (data){
-    //   debugPrint("categories are changed");
-    //   loadCategories();
-    // });
   }
 
   @override
   void dispose() {
-
     _accountEventListener?.cancel();
     _categoryEventListener?.cancel();
 
@@ -349,7 +333,9 @@ class _PaymentForm extends State<PaymentForm>{
 
   @override
   Widget build(BuildContext context) {
-    if(!_initialised) return const CircularProgressIndicator();
+    if(!_initialised) return Center(
+      child: CircularProgressIndicator(),
+    ) ;
 
     return
       Scaffold(
@@ -548,7 +534,10 @@ class _PaymentForm extends State<PaymentForm>{
                                           highlightElevation: 0,
                                           disabledElevation: 0,
                                           onPressed: (){
-                                            showDialog(context: context, builder: (builder)=>const AccountForm());
+                                            showDialog(context: context, builder: (builder)=> AccountForm(userId: widget.userId,
+                                              onSave: () {
+                                                loadAccounts(); // Refresh accounts list after saving
+                                              },));
                                           },
                                           child:  SizedBox(
                                             width: double.infinity,
@@ -660,7 +649,10 @@ class _PaymentForm extends State<PaymentForm>{
                                                 highlightElevation: 0,
                                                 disabledElevation: 0,
                                                 onPressed: (){
-                                                  showDialog(context: context, builder: (builder)=> const CategoryForm());
+                                                  showDialog(context: context, builder: (builder)=> CategoryForm(userId: widget.userId,
+                                                    onSave: () {
+                                                      loadCategories(); // Refresh accounts list after saving
+                                                    },));
                                                 },
                                                 child:  SizedBox(
                                                   width: double.infinity,

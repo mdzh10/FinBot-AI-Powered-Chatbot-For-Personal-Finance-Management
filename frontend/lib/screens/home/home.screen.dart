@@ -3,7 +3,9 @@ import 'package:events_emitter/listener.dart';
 import 'package:events_emitter/events_emitter.dart';
 import 'package:finbot/models/AccountResponseModel.dart';
 import 'package:finbot/models/Transaction.dart';
+import 'package:finbot/models/TransactionResponse.dart';
 import 'package:finbot/screens/home/widgets/account_slider.dart';
+import 'package:finbot/screens/home/widgets/payment_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -38,15 +40,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // final PaymentDao _paymentDao = PaymentDao();
-  // final AccountDao _accountDao = AccountDao();
   EventListener? _accountEventListener;
-  // EventListener? _categoryEventListener;
   EventListener? _paymentEventListener;
-  // List<Payment> _payments = [];
   List<Account> _accounts = [];
+  List<Transaction> _transactions = [];
   AccountResponseModel? accountResponseModel;
   DashboardResponseModel? dashboardResponseModel;
+  TransactionResponse? transactionResponse;
 
   double _income = 0;
   double _expense = 0;
@@ -79,21 +79,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _fetchTransactions(int? userId) async {
 
+    final queryParameters = {
+      'start_date': _range.start.toIso8601String(), // Use the selected date range
+      'end_date': _range.end.toIso8601String(),
+    };
 
+    final uriTrans = Uri.parse("https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/$userId")
+        .replace(queryParameters: queryParameters);
 
-    // List<Transaction> trans = await _paymentDao.find(range: _range, category: _category, account:_account);
+    print('API URL: $uriTrans');
 
 
     final url = Uri.parse(
         'https://finbot-fastapi-rc4376baha-ue.a.run.app/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
 
     try {
+      final responseTrans = await http.get(uriTrans);
+      print('Response Status: ${responseTrans.statusCode}');
+      print('Response Body: ${responseTrans.body}');
+
+      if (responseTrans.statusCode == 200) {
+        // Decode JSON and create the TransactionResponse object
+        final Map<String, dynamic> json = jsonDecode(responseTrans.body);
+        transactionResponse = TransactionResponse.fromJson(json);
+      } else {
+        print('Failed to load data: ${transactionResponse}');
+      }
       final responseDashboard = await http.get(url);
 
       if (responseDashboard.statusCode == 200) {
         final data = jsonDecode(responseDashboard.body);
         dashboardResponseModel = DashboardResponseModel.fromJson(data);
-        // return DashboardResponseModel.fromJson(data);
       } else {
         print('Failed to load data: ${responseDashboard.statusCode}');
       }
@@ -118,9 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     //fetch accounts
     List<Account>? accounts = accountResponseModel?.accounts;
+    List<Transaction>? transactions = transactionResponse?.transactions;
 
     setState(() {
-      // _payments = trans;
+      _transactions = transactions != null? transactions : [];
       // _income = income;
       // _expense = expense;
       _accounts = accounts != null? accounts : [];
@@ -132,21 +149,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchTransactions(widget.userId);
-
-    // _accountEventListener = globalEvent.on("account_update", (data){
-    //   debugPrint("accounts are changed");
-    //   _fetchTransactions(widget.userId);
-    // });
-
-    // _categoryEventListener = globalEvent.on("category_update", (data){
-    //   debugPrint("categories are changed");
-    //   _fetchTransactions();
-    // });
-    //
-    // _paymentEventListener = globalEvent.on("payment_update", (data){
-    //   debugPrint("payments are changed");
-    //   _fetchTransactions();
-    // });
   }
 
   @override
@@ -159,15 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   leading: IconButton(
-      //     icon: const Icon(Icons.menu),
-      //     onPressed: (){
-      //       Scaffold.of(context).openDrawer();
-      //     },
-      //   ),
-      //   title: const Text("Home", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),),
-      // ),
       body: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,30 +269,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              // _payments.isNotEmpty? ListView.separated(
-              //   padding:  EdgeInsets.zero,
-              //   physics: const NeverScrollableScrollPhysics(),
-              //   shrinkWrap: true,
-              //   itemBuilder: (BuildContext context, index){
-              //     return PaymentListItem(payment: _payments[index], onTap: (){
-              //       Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: _payments[index].type, payment: _payments[index],)));
-              //     });
-              //
-              //   },
-              //   separatorBuilder: (BuildContext context, int index){
-              //     return Container(
-              //       width: double.infinity,
-              //       color: Colors.grey.withAlpha(25),
-              //       height: 1,
-              //       margin: const EdgeInsets.only(left: 75, right: 20),
-              //     );
-              //   },
-              //   itemCount: _payments.length,
-              // ):Container(
-              //   padding: const EdgeInsets.symmetric(vertical: 25),
-              //   alignment: Alignment.center,
-              //   child: const Text("No payments!"),
-              // ),
+              _transactions.isNotEmpty? ListView.separated(
+                padding:  EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemBuilder: (BuildContext context, index){
+                  return PaymentListItem(transaction: _transactions[index], onTap: (){
+                    Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: _transactions[index].type, transaction: _transactions[index], userId: widget.userId,)));
+                  });
+
+                },
+                separatorBuilder: (BuildContext context, int index){
+                  return Container(
+                    width: double.infinity,
+                    color: Colors.grey.withAlpha(25),
+                    height: 1,
+                    margin: const EdgeInsets.only(left: 75, right: 20),
+                  );
+                },
+                itemCount: _transactions.length,
+              ):Container(
+                padding: const EdgeInsets.symmetric(vertical: 25),
+                alignment: Alignment.center,
+                child: const Text("No payments!"),
+              ),
             ],
           )
       ),

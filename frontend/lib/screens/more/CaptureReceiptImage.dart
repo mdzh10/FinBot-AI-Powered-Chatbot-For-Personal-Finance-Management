@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 // Receipt Response Model
 class ReceiptResponse {
@@ -77,6 +79,7 @@ class ImageCapturePage extends StatefulWidget {
 class _ImageCapturePageState extends State<ImageCapturePage> {
   File? _image;
   final picker = ImagePicker();
+  final String apiUrl = 'https://finbot-fastapi-rc4376baha-ue.a.run.app/transactions/add';
 
   Future<void> _getImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
@@ -84,7 +87,8 @@ class _ImageCapturePageState extends State<ImageCapturePage> {
       setState(() {
         _image = File(pickedFile.path);
       });
-      // Simulating API call with the selected image and getting receipt data
+
+      // Simulate API call to extract receipt data
       ReceiptResponse receiptResponse = await _fetchReceiptData();
 
       // Pass the receipt data and the image to the next screen (ImageEditPage)
@@ -102,7 +106,7 @@ class _ImageCapturePageState extends State<ImageCapturePage> {
     // Simulate a network delay
     await Future.delayed(Duration(seconds: 2));
 
-    // Simulate API response (this would normally come from a backend or service)
+    // Simulated receipt data (normally you would get this from an OCR API)
     return ReceiptResponse(
       isSuccess: true,
       msg: "Receipt processed successfully",
@@ -111,6 +115,40 @@ class _ImageCapturePageState extends State<ImageCapturePage> {
         Item(id: 2, itemName: "Milk", category: "Dairy", price: 1.2, quantity: 1),
       ],
     );
+  }
+
+  Future<void> _saveTransaction(ReceiptResponse receipt) async {
+    final requestBody = {
+      'user_id': 1,  // Replace with actual user ID if necessary
+      'account_id': 1,  // Replace with actual account ID if necessary
+      'category_id': 1,  // Replace with actual category ID if necessary
+      'title': 'Receipt from ${DateTime.now().toString()}',
+      'description': 'Receipt processed from image capture',
+      'amount': receipt.items.fold(0, (sum, item) => sum + item.price * item.quantity),
+      'type': 'debit',  // Set according to your use case
+      'datetime': DateTime.now().toIso8601String(),
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        // Handle successful response
+        print('Transaction saved successfully: ${response.body}');
+      } else {
+        // Handle error response
+        print('Failed to save transaction: ${response.statusCode}');
+        print(response.body);
+      }
+    } catch (e) {
+      print('Error occurred while saving transaction: $e');
+    }
   }
 
   @override
@@ -167,7 +205,6 @@ class _ImageEditPageState extends State<ImageEditPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize the list of items for editing
     _editableItems = widget.receipt.items.map((item) => Item(
       id: item.id,
       itemName: item.itemName,
@@ -206,14 +243,12 @@ class _ImageEditPageState extends State<ImageEditPage> {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    // Save details and go back to capture page
                     Navigator.pop(context, _editableItems);
                   },
                   child: Text('Save'),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // Navigate back to the capture page
                     Navigator.pop(context);
                   },
                   child: Text('Recapture/Upload'),
@@ -260,26 +295,7 @@ class _ImageEditPageState extends State<ImageEditPage> {
                   itemName: item.itemName,
                   category: item.category,
                   price: item.price,
-                  quantity: int.tryParse(value) ?? item.quantity,
-                );
-              });
-            },
-          ),
-        ),
-        SizedBox(width: 10),
-        Expanded(
-          child: TextField(
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
-            controller: TextEditingController(text: item.price.toStringAsFixed(2)),
-            decoration: InputDecoration(labelText: 'Price'),
-            onChanged: (value) {
-              setState(() {
-                _editableItems[index] = Item(
-                  id: item.id,
-                  itemName: item.itemName,
-                  category: item.category,
-                  price: double.tryParse(value) ?? item.price,
-                  quantity: item.quantity,
+                  quantity: int.parse(value),
                 );
               });
             },

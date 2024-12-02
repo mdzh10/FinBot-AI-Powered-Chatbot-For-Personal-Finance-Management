@@ -186,14 +186,16 @@ class _ImageEditPageState extends State<ImageEditPage> {
       'category_id': 1,  // Replace with actual category ID if necessary
       'title': 'Receipt from ${DateTime.now().toString()}',
       'description': 'Receipt processed from image capture',
-      'amount': widget.receipt.items.fold(0, (sum, item) => sum + item.price * item.quantity),
+      // 'amount': widget.receipt.items.fold(0, (sum, item) => sum + item.price * item.quantity),
+      'amount': 0,
       'type': 'debit',  // Change to 'credit' if needed
       'datetime': DateTime.now().toIso8601String(),
     };
 
     try {
+      final apiurl = '';
       final response = await http.post(
-        Uri.parse(apiUrl),
+        Uri.parse(apiurl),
         headers: {
           'Content-Type': 'application/json',
         },

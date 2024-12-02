@@ -1,3 +1,4 @@
+import 'package:finbot/screens/chatbot/chatbot_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -57,6 +58,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             children: [
               HomeScreen(cubit.state.userId),
               AccountsScreen(cubit.state.userId),
+              ChatPage(cubit.state.userId),
               CategoriesScreen(cubit.state.userId),
               MoreScreen(cubit.state.userId)
             ],

@@ -3,7 +3,9 @@ import 'package:events_emitter/listener.dart';
 import 'package:events_emitter/events_emitter.dart';
 import 'package:finbot/models/AccountResponseModel.dart';
 import 'package:finbot/models/Transaction.dart';
+import 'package:finbot/models/TransactionResponse.dart';
 import 'package:finbot/screens/home/widgets/account_slider.dart';
+import 'package:finbot/screens/home/widgets/payment_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -38,28 +40,36 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // final PaymentDao _paymentDao = PaymentDao();
-  // final AccountDao _accountDao = AccountDao();
   EventListener? _accountEventListener;
-  // EventListener? _categoryEventListener;
   EventListener? _paymentEventListener;
-  // List<Payment> _payments = [];
   List<Account> _accounts = [];
+  List<Transaction> _transactions = [];
   AccountResponseModel? accountResponseModel;
   DashboardResponseModel? dashboardResponseModel;
+  TransactionResponse? transactionResponse;
+  bool _isLoading = false;
 
-  double _income = 0;
-  double _expense = 0;
-  //double _savings = 0;
+
   DateTimeRange _range = DateTimeRange(
       start: DateTime.now().subtract(Duration(days: DateTime.now().day -1)),
       end: DateTime.now()
   );
-  Account? _account;
-  // Category? _category;
+
 
   void openAddPaymentPage(TransactionType type) async {
-    Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: type, userId: widget.userId,)));
+    // Wait for the PaymentForm to finish
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (builder) => PaymentForm(type: type, userId: widget.userId),
+      ),
+    );
+
+    // Check if the result indicates the form completed successfully
+    if (result != null) {
+      // Refresh the transactions
+      _fetchTransactions(widget.userId);
+    }
+    // Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: type, userId: widget.userId,)));
   }
 
   void handleChooseDateRange() async{
@@ -78,95 +88,91 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _fetchTransactions(int? userId) async {
+    setState(() {
+      _isLoading = true; // Start loading
+    });
 
-    // List<Payment> trans = await _paymentDao.find(range: _range, category: _category, account:_account);
+    final queryParameters = {
+      'start_date': _range.start.toIso8601String(),
+      'end_date': _range.end.toIso8601String(),
+    };
 
-
-    final url = Uri.parse(
-        'http://192.168.224.192:8000/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
+    final uriTrans = Uri.parse("https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/$userId")
+        .replace(queryParameters: queryParameters);
 
     try {
+      final responseTrans = await http.get(uriTrans);
+      print('API URL: $uriTrans');
+      print('Response Status: ${responseTrans.statusCode}');
+      print('Response Body: ${responseTrans.body}');
+
+      if (responseTrans.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(responseTrans.body);
+        transactionResponse = TransactionResponse.fromJson(json);
+      } else {
+        print('Failed to load transactions: ${responseTrans.statusCode}');
+      }
+
+      final url = Uri.parse(
+          'https://finbot-fastapi-rc4376baha-ue.a.run.app/dashboard/$userId?start_date=${_range.start}&end_date=${_range.end}');
       final responseDashboard = await http.get(url);
 
       if (responseDashboard.statusCode == 200) {
         final data = jsonDecode(responseDashboard.body);
         dashboardResponseModel = DashboardResponseModel.fromJson(data);
-        // return DashboardResponseModel.fromJson(data);
       } else {
-        print('Failed to load data: ${responseDashboard.statusCode}');
+        print('Failed to load dashboard data: ${responseDashboard.statusCode}');
       }
-    } catch (e) {
-      print('Error: $e');
-    }
 
-      final String apiUrl = "http://192.168.224.192:8000/account/"+userId.toString();
+      final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/$userId";
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: {"Content-Type": "application/json"},
       );
-      print(json.decode(response.body));
+
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = jsonDecode(response.body);
         accountResponseModel = AccountResponseModel.fromJson(data);
       } else {
         throw Exception('Failed to load accounts');
       }
 
+      List<Account>? accounts = accountResponseModel?.accounts;
+      List<Transaction>? transactions = transactionResponse?.transactions;
 
-
-    //fetch accounts
-    List<Account>? accounts = accountResponseModel?.accounts;
-
-    setState(() {
-      // _payments = trans;
-      // _income = income;
-      // _expense = expense;
-      _accounts = accounts != null? accounts : [];
-    });
+      setState(() {
+        _transactions = transactions ?? [];
+        _accounts = accounts ?? [];
+      });
+    } catch (e) {
+      print('Error: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // Stop loading
+      });
+    }
   }
+
 
 
   @override
   void initState() {
     super.initState();
     _fetchTransactions(widget.userId);
-
-    // _accountEventListener = globalEvent.on("account_update", (data){
-    //   debugPrint("accounts are changed");
-    //   _fetchTransactions(widget.userId);
-    // });
-
-    // _categoryEventListener = globalEvent.on("category_update", (data){
-    //   debugPrint("categories are changed");
-    //   _fetchTransactions();
-    // });
-    //
-    // _paymentEventListener = globalEvent.on("payment_update", (data){
-    //   debugPrint("payments are changed");
-    //   _fetchTransactions();
-    // });
   }
 
   @override
   void dispose() {
     _accountEventListener?.cancel();
-    // _categoryEventListener?.cancel();
     _paymentEventListener?.cancel();
     super.dispose();
   }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   leading: IconButton(
-      //     icon: const Icon(Icons.menu),
-      //     onPressed: (){
-      //       Scaffold.of(context).openDrawer();
-      //     },
-      //   ),
-      //   title: const Text("Home", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),),
-      // ),
-      body: SingleChildScrollView(
+      body: _isLoading ? Center(
+        child: CircularProgressIndicator(),
+      ) : SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -178,7 +184,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text("Hi! Good ${greeting()}"),
                     BlocConsumer<AppCubit, AppState>(
                         listener: (context, state){
-
                         },
                         builder: (context, state)=>Text(state.userName ?? "Guest", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),)
                     )
@@ -274,30 +279,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              // _payments.isNotEmpty? ListView.separated(
-              //   padding:  EdgeInsets.zero,
-              //   physics: const NeverScrollableScrollPhysics(),
-              //   shrinkWrap: true,
-              //   itemBuilder: (BuildContext context, index){
-              //     return PaymentListItem(payment: _payments[index], onTap: (){
-              //       Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: _payments[index].type, payment: _payments[index],)));
-              //     });
-              //
-              //   },
-              //   separatorBuilder: (BuildContext context, int index){
-              //     return Container(
-              //       width: double.infinity,
-              //       color: Colors.grey.withAlpha(25),
-              //       height: 1,
-              //       margin: const EdgeInsets.only(left: 75, right: 20),
-              //     );
-              //   },
-              //   itemCount: _payments.length,
-              // ):Container(
-              //   padding: const EdgeInsets.symmetric(vertical: 25),
-              //   alignment: Alignment.center,
-              //   child: const Text("No payments!"),
-              // ),
+              _transactions.isNotEmpty? ListView.separated(
+                padding:  EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemBuilder: (BuildContext context, index){
+                  return PaymentListItem(transaction: _transactions[index], onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (builder) => PaymentForm(
+                          type: _transactions[index].type,
+                          transaction: _transactions[index],
+                          userId: widget.userId,
+                        ),
+                      ),
+                    ).then((result) {
+                      if (result != null) {
+                        // Reload the transactions upon successful update
+                        _fetchTransactions(widget.userId);
+                      }
+                    });
+                  });
+
+                },
+                separatorBuilder: (BuildContext context, int index){
+                  return Container(
+                    width: double.infinity,
+                    color: Colors.grey.withAlpha(25),
+                    height: 1,
+                    margin: const EdgeInsets.only(left: 75, right: 20),
+                  );
+                },
+                itemCount: _transactions.length,
+              ):Container(
+                padding: const EdgeInsets.symmetric(vertical: 25),
+                alignment: Alignment.center,
+                child: const Text("No payments!"),
+              ),
             ],
           )
       ),

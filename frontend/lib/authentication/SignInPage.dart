@@ -30,7 +30,7 @@ class _SigninPageState extends State<SigninPage> {
       _message = null;
     });
 
-    const url = 'http://192.168.224.192:8000/auth/login';  // Replace with your deployed API URL
+    const url = 'https://finbot-fastapi-rc4376baha-ue.a.run.app/auth/login';  // Replace with your deployed API URL
 
     try {
       final response = await http.post(

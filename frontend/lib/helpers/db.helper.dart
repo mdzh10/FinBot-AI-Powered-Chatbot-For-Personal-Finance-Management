@@ -49,7 +49,7 @@ Future<List<Account>> loadAccount(int? userId) async {
 
   AccountResponseModel? accountResponseModel;
 
-  final String apiUrl = "http://192.168.224.192:8000/account/" + userId.toString();
+  final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/" + userId.toString();
   final response = await http.get(
     Uri.parse(apiUrl),
     headers: {"Content-Type": "application/json"},
@@ -70,7 +70,7 @@ Future<List<Category>> loadCategory(int? userId) async {
 
   CategoryResponse? categoryResponse;
 
-  final String apiUrl = "http://192.168.224.192:8000/category/" + userId.toString();
+  final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/category/" + userId.toString();
   final response = await http.get(
     Uri.parse(apiUrl),
     headers: {"Content-Type": "application/json"},

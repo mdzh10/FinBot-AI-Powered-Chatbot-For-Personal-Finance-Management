@@ -41,7 +41,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
     });
 
     final response = await http.delete(
-      Uri.parse('http://192.168.224.192:8000/account/delete/' + accountId.toString()),
+      Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/account/delete/' + accountId.toString()),
       headers: {"Content-Type": "application/json"},
     );
 
@@ -61,7 +61,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
       _isLoading = true;
     });
 
-    final String apiUrl = "http://192.168.224.192:8000/account/" + userId.toString();
+    final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/" + userId.toString();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},

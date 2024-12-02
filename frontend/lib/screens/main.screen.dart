@@ -9,12 +9,12 @@ import 'home/home.screen.dart';
 import 'more/more_screen.dart';
 import 'onboard/onboard_screen.dart';
 import 'dart:async';
+
 class MainScreen extends StatefulWidget{
   const MainScreen({super.key});
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
-
 
 
 class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
@@ -30,6 +30,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
   void _startGlowAnimation() {
     Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel(); // Ensure the timer stops if the widget is disposed
+        return;
+      }
       setState(() {
         _isGlorious = !_isGlorious; // Toggle glow effect every second
       });
@@ -44,7 +48,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         if (cubit.state.accessToken == null) {
           return OnboardScreen();
         } else {
-          print("cubit userId : " + cubit.state.userId.toString());
+          // print("cubit userId : " + cubit.state.userId.toString());
         }
         return Scaffold(
           body: PageView(

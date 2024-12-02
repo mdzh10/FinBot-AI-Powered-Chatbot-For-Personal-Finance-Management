@@ -285,12 +285,10 @@ class _PaymentForm extends State<PaymentForm>{
       }
 
   }
-
-
     if (widget.onClose != null) {
       widget.onClose!(transaction);
     }
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(true);
   }
 
   Future<void> deleteTransaction(int transactionId) async {
@@ -306,6 +304,7 @@ class _PaymentForm extends State<PaymentForm>{
 
       if (response.statusCode == 200) {
         print('Transaction deleted successfully: ${response.body}');
+        Navigator.of(context).pop(true);
       } else if (response.statusCode == 422) {
         print('Validation Error: ${response.body}');
       } else {
@@ -347,9 +346,7 @@ class _PaymentForm extends State<PaymentForm>{
                     ConfirmModal.showConfirmDialog(context, title: "Are you sure?", content: const Text("After deleting payment can't be recovered."),
                         onConfirm: (){
                           deleteTransaction(_id!).then((value) {
-                            // globalEvent.emit("payment_update");
-                            Navigator.pop(context);
-                            Navigator.pop(context);
+                            Navigator.pop(context, true);
                           });
                         },
                         onCancel: (){

@@ -57,7 +57,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   void openAddPaymentPage(TransactionType type) async {
-    Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: type, userId: widget.userId,)));
+    // Wait for the PaymentForm to finish
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (builder) => PaymentForm(type: type, userId: widget.userId),
+      ),
+    );
+
+    // Check if the result indicates the form completed successfully
+    if (result != null) {
+      // Refresh the transactions
+      _fetchTransactions(widget.userId);
+    }
+    // Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: type, userId: widget.userId,)));
   }
 
   void handleChooseDateRange() async{
@@ -272,8 +284,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
                 itemBuilder: (BuildContext context, index){
-                  return PaymentListItem(transaction: _transactions[index], onTap: (){
-                    Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>PaymentForm(type: _transactions[index].type, transaction: _transactions[index], userId: widget.userId,)));
+                  return PaymentListItem(transaction: _transactions[index], onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (builder) => PaymentForm(
+                          type: _transactions[index].type,
+                          transaction: _transactions[index],
+                          userId: widget.userId,
+                        ),
+                      ),
+                    ).then((result) {
+                      if (result != null) {
+                        // Reload the transactions upon successful update
+                        _fetchTransactions(widget.userId);
+                      }
+                    });
                   });
 
                 },

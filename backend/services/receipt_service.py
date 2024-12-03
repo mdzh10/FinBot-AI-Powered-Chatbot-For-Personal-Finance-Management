@@ -11,9 +11,8 @@ from schemas.transaction_schema import TransactionCreate
 from config.config import settings
 from schemas.receipt_schema import (
     ItemDetails,
-    ReceiptResponse,
-    ReceiptTransactionCreate,
-)
+    ReceiptResponse
+    )
 from typing import List
 
 # Replace 'your_gpt4_api_key' with your actual GPT-4 API key
@@ -106,7 +105,7 @@ def extract_items_from_image(base64_image: str) -> List[ItemDetails]:
 
 
 async def process_receipt(
-    receipt: ReceiptTransactionCreate, file: UploadFile
+    user_id, file: UploadFile
 ) -> ReceiptResponse:
     """Processes the receipt image and extracts items, saving them to the database."""
     image = Image.open(io.BytesIO(await file.read()))
@@ -119,8 +118,8 @@ async def process_receipt(
     for transaction in extracted_items:
         transactions.append(
             TransactionCreate(
-                user_id=receipt.user_id,
-                account_id=None,
+                user_id=user_id,
+                account_id=0,
                 category_id=None,
                 title=transaction.item_name,
                 description="",

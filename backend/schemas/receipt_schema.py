@@ -1,17 +1,12 @@
 from pydantic import BaseModel
 from typing import List
-from typing import Optional
-from datetime import datetime
 from schemas.transaction_schema import TransactionCreate
-from models.transaction import PaymentTypeEnum
 
-
-class ReceiptTransactionCreate(BaseModel):
-    user_id: int
 
 class ItemDetails(BaseModel):
     item_name: str
     price: float
+
 
 class ReceiptResponse(BaseModel):
     isSuccess: bool = True

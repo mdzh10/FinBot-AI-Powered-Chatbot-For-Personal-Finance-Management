@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Form, HTTPException, UploadFile, File
 from services.receipt_service import process_receipt
-from schemas.receipt_schema import ReceiptResponse, ReceiptTransactionCreate
+from schemas.receipt_schema import ReceiptResponse
 
 router = APIRouter()
 
@@ -11,8 +11,6 @@ async def extract_items(
     file: UploadFile = File(...),
 ):
     try:
-        # Create a ReceiptTransactionCreate object
-        receipt = ReceiptTransactionCreate(user_id=user_id)
-        return await process_receipt(receipt, file)
+        return await process_receipt(user_id, file)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -8,7 +8,6 @@ from models.transaction import PaymentTypeEnum
 
 class ReceiptTransactionCreate(BaseModel):
     user_id: int
-    account_id: int
 
 class ItemDetails(BaseModel):
     item_name: str

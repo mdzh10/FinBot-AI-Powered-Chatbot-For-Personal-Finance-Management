@@ -120,7 +120,7 @@ async def process_receipt(
         transactions.append(
             TransactionCreate(
                 user_id=receipt.user_id,
-                account_id=receipt.account_id,
+                account_id=None,
                 category_id=None,
                 title=transaction.item_name,
                 description="",

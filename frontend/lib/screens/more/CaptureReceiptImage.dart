@@ -1,85 +1,27 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:finbot/models/ReceiptResponse.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 
-// Receipt Response Model
-class ReceiptResponse {
-  final bool isSuccess;
-  final String msg;
-  final List<Item> items;
-
-  ReceiptResponse({
-    required this.isSuccess,
-    required this.msg,
-    required this.items,
-  });
-
-  factory ReceiptResponse.fromJson(Map<String, dynamic> data) {
-    return ReceiptResponse(
-      isSuccess: data['isSuccess'],
-      msg: data['msg'],
-      items: (data['items'] as List)
-          .map((item) => Item.fromJson(item))
-          .toList(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'isSuccess': isSuccess,
-      'msg': msg,
-      'items': items.map((item) => item.toJson()).toList(),
-    };
-  }
-}
-
-class Item {
-  final int id;
-  final String itemName;
-  final String category;
-  final double price;
-  final int quantity;
-
-  Item({
-    required this.id,
-    required this.itemName,
-    required this.category,
-    required this.price,
-    required this.quantity,
-  });
-
-  factory Item.fromJson(Map<String, dynamic> data) {
-    return Item(
-      id: data['id'],
-      itemName: data['item_name'],
-      category: data['category'],
-      price: (data['price'] ?? 0).toDouble(),
-      quantity: data['quantity'] ?? 1,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'item_name': itemName,
-      'category': category,
-      'price': price,
-      'quantity': quantity,
-    };
-  }
-}
+import 'ImageEdit.dart';
 
 class ImageCapturePage extends StatefulWidget {
+  final int? userId;
+
+  const ImageCapturePage({super.key, this.userId});
+
   @override
-  _ImageCapturePageState createState() => _ImageCapturePageState();
+  State<ImageCapturePage> createState() => _ImageCapturePageState();
 }
 
 class _ImageCapturePageState extends State<ImageCapturePage> {
   File? _image;
   final picker = ImagePicker();
   final String apiUrl = 'https://finbot-fastapi-rc4376baha-ue.a.run.app/transactions/add';
+  bool _isLoading = false; // Track loading state
+  ReceiptResponse? _receiptResponse;
 
   Future<void> _getImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
@@ -87,32 +29,73 @@ class _ImageCapturePageState extends State<ImageCapturePage> {
       setState(() {
         _image = File(pickedFile.path);
       });
-      // Simulate API call with the selected image and getting receipt data
-      ReceiptResponse receiptResponse = await _fetchReceiptData();
 
-      // Pass the receipt data and the image to the next screen (ImageEditPage)
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ImageEditPage(image: _image!, receipt: receiptResponse),
-        ),
-      );
+      // Start loading when API call begins
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Simulate API call with the selected image and getting receipt data
+      _receiptResponse = await _fetchReceiptData(pickedFile);
+
+      // End loading after receiving response
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (_receiptResponse?.transactions != null && _receiptResponse?.transactions != []) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UploadImageScreen(
+              transactions: _receiptResponse?.transactions ?? [], // Provide empty list if null
+              userId: widget.userId,
+            ),
+          ),
+        );
+      } else {
+        // Show a SnackBar if no transactions are found
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No transactions found.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+
+
+
     }
   }
 
-  Future<ReceiptResponse> _fetchReceiptData() async {
-    // Simulate a network delay
-    await Future.delayed(Duration(seconds: 2));
+  Future<ReceiptResponse?> _fetchReceiptData(XFile? image) async {
+    final Uri apiUrl = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/receipt/extract-items/');  // Replace with your actual API URL
 
-    // Simulate API response (this would normally come from a backend or service)
-    return ReceiptResponse(
-      isSuccess: true,
-      msg: "Receipt processed successfully",
-      items: [
-        Item(id: 1, itemName: "Apple", category: "Fruit", price: 2.5, quantity: 3),
-        Item(id: 2, itemName: "Milk", category: "Dairy", price: 1.2, quantity: 1),
-      ],
-    );
+    var request = http.MultipartRequest('POST', apiUrl);
+
+    // Add user_id as a field
+    request.fields['user_id'] = widget.userId.toString();
+
+    // Add file as binary data
+    request.files.add(await http.MultipartFile.fromPath('file', _image!.path));
+
+    try {
+      // Send the request
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseString = await response.stream.bytesToString();
+        final responseData = json.decode(responseString);
+        ReceiptResponse receiptResponse = ReceiptResponse.fromJson(responseData);
+        print(receiptResponse);
+        return receiptResponse;
+      } else {
+        print('API request failed with status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error during API call: $e');
+    }
   }
 
   @override
@@ -123,194 +106,37 @@ class _ImageCapturePageState extends State<ImageCapturePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton.icon(
-              icon: Icon(Icons.camera_alt),
-              label: Text('Capture Image'),
-              onPressed: () => _getImage(ImageSource.camera),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            // If loading, show CircularProgressIndicator
+            if (_isLoading)
+              CircularProgressIndicator()
+            else ...[
+              ElevatedButton.icon(
+                icon: Icon(Icons.camera_alt),
+                label: Text('Capture Image'),
+                onPressed: () => _getImage(ImageSource.camera),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton.icon(
-              icon: Icon(Icons.upload_file),
-              label: Text('Upload Image'),
-              onPressed: () => _getImage(ImageSource.gallery),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+              SizedBox(height: 20),
+              ElevatedButton.icon(
+                icon: Icon(Icons.upload_file),
+                label: Text('Upload Image'),
+                onPressed: () => _getImage(ImageSource.gallery),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ImageEditPage extends StatefulWidget {
-  final File image;
-  final ReceiptResponse receipt;
-
-  ImageEditPage({required this.image, required this.receipt});
-
-  @override
-  _ImageEditPageState createState() => _ImageEditPageState();
-}
-
-class _ImageEditPageState extends State<ImageEditPage> {
-  late List<Item> _editableItems;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize the list of items for editing
-    _editableItems = widget.receipt.items.map((item) => Item(
-      id: item.id,
-      itemName: item.itemName,
-      category: item.category,
-      price: item.price,
-      quantity: item.quantity,
-    )).toList();
-  }
-
-  Future<void> _saveTransaction() async {
-    final requestBody = {
-      'user_id': 1,  // Replace with actual user ID if necessary
-      'account_id': 1,  // Replace with actual account ID if necessary
-      'category_id': 1,  // Replace with actual category ID if necessary
-      'title': 'Receipt from ${DateTime.now().toString()}',
-      'description': 'Receipt processed from image capture',
-      // 'amount': widget.receipt.items.fold(0, (sum, item) => sum + item.price * item.quantity),
-      'amount': 0,
-      'type': 'debit',  // Change to 'credit' if needed
-      'datetime': DateTime.now().toIso8601String(),
-    };
-
-    try {
-      final apiurl = '';
-      final response = await http.post(
-        Uri.parse(apiurl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(requestBody),
-      );
-
-      if (response.statusCode == 200) {
-        // Handle successful response
-        print('Transaction saved successfully: ${response.body}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Transaction saved successfully')),
-        );
-      } else {
-        // Handle error response
-        print('Failed to save transaction: ${response.statusCode}');
-        print(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save transaction')),
-        );
-      }
-    } catch (e) {
-      print('Error occurred while saving transaction: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error occurred while saving transaction')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Edit Receipt Details')),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Image.file(widget.image, height: 200),
-            SizedBox(height: 20),
-            Text(
-              widget.receipt.msg,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            Text('Receipt Items:', style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-            // Display and edit items
-            for (int i = 0; i < _editableItems.length; i++) ...[
-              _buildItemEditRow(i),
-              SizedBox(height: 10),
             ],
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: _saveTransaction,
-                  child: Text('Save Transaction'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Navigate back to the capture page
-                    Navigator.pop(context);
-                  },
-                  child: Text('Recapture/Upload'),
-                ),
-              ],
-            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildItemEditRow(int index) {
-    Item item = _editableItems[index];
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: TextEditingController(text: item.itemName),
-            decoration: InputDecoration(labelText: 'Item Name'),
-            onChanged: (value) {
-              setState(() {
-                _editableItems[index] = Item(
-                  id: item.id,
-                  itemName: value,
-                  category: item.category,
-                  price: item.price,
-                  quantity: item.quantity,
-                );
-              });
-            },
-          ),
-        ),
-        SizedBox(width: 10),
-        Expanded(
-          child: TextField(
-            keyboardType: TextInputType.number,
-            controller: TextEditingController(text: item.quantity.toString()),
-            decoration: InputDecoration(labelText: 'Quantity'),
-            onChanged: (value) {
-              setState(() {
-                _editableItems[index] = Item(
-                  id: item.id,
-                  itemName: item.itemName,
-                  category: item.category,
-                  price: item.price,
-                  quantity: int.tryParse(value) ?? item.quantity,
-                );
-              });
-            },
-          ),
-        ),
-      ],
     );
   }
 }

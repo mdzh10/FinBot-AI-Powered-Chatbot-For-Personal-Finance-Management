@@ -47,7 +47,7 @@ class Transaction {
   final DateTime? datetime;
 
   Transaction({
-    required this.id,
+    this.id,
     required this.account,
     required this.userId,
     required this.category,

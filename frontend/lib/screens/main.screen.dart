@@ -97,7 +97,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     height: 24,
                   ),
                 ),
-                label: "Chatbot",
+                label: "Finbot",
               ),
 
               const NavigationDestination(icon: Icon(Symbols.category, fill: 1,), label: "Categories"),

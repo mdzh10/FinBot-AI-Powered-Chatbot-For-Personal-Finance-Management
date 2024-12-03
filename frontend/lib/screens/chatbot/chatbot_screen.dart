@@ -175,7 +175,7 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Generate plots'),
+        title: const Text("Generate plots", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
       ),
       body: Column(
         children: [

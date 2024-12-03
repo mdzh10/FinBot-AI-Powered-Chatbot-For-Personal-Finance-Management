@@ -31,6 +31,7 @@ class _AccountForm extends State<AccountForm> {
       _account = Account(
         id: widget.account!.id,
         accountName: widget.account!.accountName,
+        bankName: widget.account!.bankName,
         accountNumber: widget.account!.accountNumber,
         accountType: widget.account!.accountType,
         balance: widget.account!.balance,
@@ -40,6 +41,7 @@ class _AccountForm extends State<AccountForm> {
     } else {
       _account = Account(
         userId: widget.userId,
+        bankName: "",
         accountName: "",
         accountNumber: 0,
         accountType: AccountType.bank,
@@ -121,10 +123,10 @@ class _AccountForm extends State<AccountForm> {
                 const SizedBox(width: 15),
                 Expanded(
                   child: TextFormField(
-                    initialValue: _account!.accountName,
+                    initialValue: _account!.bankName,
                     decoration: InputDecoration(
-                      labelText: 'Name',
-                      hintText: 'Account name',
+                      labelText: 'Bank Name',
+                      hintText: 'Bank Name',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                       ),
@@ -133,7 +135,7 @@ class _AccountForm extends State<AccountForm> {
                     ),
                     onChanged: (String text) {
                       setState(() {
-                        _account!.accountName = text;
+                        _account!.bankName = text;
                       });
                     },
                   ),

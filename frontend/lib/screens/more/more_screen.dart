@@ -119,7 +119,7 @@ class _MoreScreenState extends State<MoreScreen> {
               onTap:() async {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ImageCapturePage()),
+                  MaterialPageRoute(builder: (context) => ImageCapturePage(userId: widget.userId,)),
                 );
               },
               leading: const CircleAvatar(

@@ -175,21 +175,22 @@ class _PaymentForm extends State<PaymentForm>{
     }
   }
 
-  void handleSaveTransaction(context) async {
-    Transaction transaction = Transaction(id: _id,
-        account: _account,
-        category: _category,
-        amount: _amount,
-        type: _type,
-        datetime: _datetime,
-        title: _title,
-        description: _description,
-        userId: widget.userId ?? 0
+  void handleSaveTransaction(BuildContext context) async {
+    Transaction transaction = Transaction(
+      id: _id,
+      account: _account,
+      category: _category,
+      amount: _amount,
+      type: _type,
+      datetime: _datetime,
+      title: _title,
+      description: _description,
+      userId: widget.userId ?? 0,
     );
 
+    // If the transaction is new (id is null), make a POST request
     if (transaction.id == null) {
       final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/add');
-
       final headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -204,11 +205,10 @@ class _PaymentForm extends State<PaymentForm>{
         "amount": _amount,
         "type": _type?.toJson(),
         "datetime": _datetime?.toIso8601String(),
-        "isExceed": false,
+        // "isExceed": false,
       }]);
 
       print("Request Body: $body");
-
 
       try {
         final response = await http.post(url, headers: headers, body: body);
@@ -218,22 +218,27 @@ class _PaymentForm extends State<PaymentForm>{
 
           if (responseData['isSuccess']) {
             print("Transaction added successfully!");
-            print("Response Message: ${responseData['msg']}");
             final List<dynamic> transactionsJson = responseData['transactions'];
             final List<Transaction> transactions = transactionsJson
                 .map((transactionJson) => Transaction.fromJson(transactionJson))
                 .toList();
 
-            // Filter the transactions where isExceed is false
-            final List<Transaction> nonExceedTransactions = transactions
-                .where((transaction) => transaction.isExceed == false)
+            // Filter transactions where isExceed is true
+            final List<Transaction> exceedTransactions = transactions
+                .where((transaction) => transaction.isExceed == true)
                 .toList();
-            // Log the filtered transactions
-            print("Non-Exceed Transactions:");
-            for (var transaction in nonExceedTransactions) {
-              print(transaction.toJson());
-            }
 
+            // If any transactions are exceeding, show the warning pop-up
+            if (exceedTransactions.isNotEmpty) {
+              String categoryNames = exceedTransactions
+                  .map((transaction) => transaction.category?.name ?? 'Unknown')
+                  .join(', ');
+
+              // Show warning pop-up with category names
+              showWarningDialog(context, categoryNames);
+            } else {
+              print("No exceeding transactions found.");
+            }
           } else {
             print("Failed to add transaction: ${responseData['msg']}");
           }
@@ -245,7 +250,8 @@ class _PaymentForm extends State<PaymentForm>{
         print("Exception occurred: $e");
       }
     } else {
-      final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/modify'); // Replace with your API URL
+      // Modify existing transaction
+      final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/modify');
       final headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -260,7 +266,7 @@ class _PaymentForm extends State<PaymentForm>{
         "description": _description,
         "amount": _amount,
         "type": _type?.toJson(),
-        "datetime": _datetime?.toIso8601String()
+        "datetime": _datetime?.toIso8601String(),
       });
 
       try {
@@ -271,8 +277,27 @@ class _PaymentForm extends State<PaymentForm>{
 
           if (responseData['isSuccess']) {
             print("Transaction modified successfully!");
-            print("Response Message: ${responseData['msg']}");
-            print("Transactions: ${responseData['transactions']}");
+            final List<dynamic> transactionsJson = responseData['transactions'];
+            final List<Transaction> transactions = transactionsJson
+                .map((transactionJson) => Transaction.fromJson(transactionJson))
+                .toList();
+
+            // Filter transactions where isExceed is true
+            final List<Transaction> exceedTransactions = transactions
+                .where((transaction) => transaction.isExceed == true)
+                .toList();
+
+            // If any transactions are exceeding, show the warning pop-up
+            if (exceedTransactions.isNotEmpty) {
+              String categoryNames = exceedTransactions
+                  .map((transaction) => transaction.category?.name ?? 'Unknown')
+                  .join(', ');
+
+              // Show warning pop-up with category names
+              showWarningDialog(context, categoryNames);
+            } else {
+              print("No exceeding transactions found.");
+            }
           } else {
             print("Failed to modify transaction: ${responseData['msg']}");
           }
@@ -283,13 +308,40 @@ class _PaymentForm extends State<PaymentForm>{
       } catch (e) {
         print("Exception occurred: $e");
       }
+    }
 
-  }
+    // Close the transaction screen after saving or modifying the transaction
     if (widget.onClose != null) {
       widget.onClose!(transaction);
     }
     Navigator.of(context).pop(true);
   }
+
+// Function to show a warning dialog with the category names
+  Future<void> showWarningDialog(BuildContext context, String categoryNames) async {
+    await Future.delayed(Duration(milliseconds: 100)); // Add delay to allow UI to settle
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Warning"),
+            content: Text("The following categories have exceeded the limit: $categoryNames"),
+            actions: <Widget>[
+              TextButton(
+                child: Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+
 
   Future<void> deleteTransaction(int transactionId) async {
     final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/delete/$transactionId'); // Replace with the actual endpoint URL
@@ -614,107 +666,101 @@ class _PaymentForm extends State<PaymentForm>{
                               ),
                             ),
 
-                            Visibility(
-                              visible: _type != TransactionType.credit,
-                              child: Container(
-                                padding: const EdgeInsets.only(left: 15, bottom: 15),
-                                child: const Text("Select Category", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),),
-                              ),
+                            Container(
+                              padding: const EdgeInsets.only(left: 15, bottom: 15),
+                              child: const Text("Select Category", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),),
                             ),
-                            Visibility(
-                              visible: _type != TransactionType.credit,
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 25, left: 15, right: 15),
-                                width: double.infinity,
-                                child: Wrap(
-                                    spacing: 10,
-                                    runSpacing: 10,
-                                    children: List.generate(_categories.length + 1, (index){
-                                      if(_categories.length == index){
-                                        return ConstrainedBox(
-                                            constraints:   const BoxConstraints(minWidth: 0,),
-                                            child:  IntrinsicWidth(
-                                              child:MaterialButton(
-                                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                                  shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(15),
-                                                      side: const BorderSide(
-                                                          width: 1.5,
-                                                          color: Colors.transparent
-                                                      )
-                                                  ),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
-                                                  elevation: 0,
-                                                  focusElevation: 0,
-                                                  hoverElevation: 0,
-                                                  highlightElevation: 0,
-                                                  disabledElevation: 0,
-                                                  onPressed: (){
-                                                    showDialog(context: context, builder: (builder)=> CategoryForm(userId: widget.userId,
-                                                      onSave: () {
-                                                        loadCategories(); // Refresh accounts list after saving
-                                                      },));
-                                                  },
-                                                  child:  SizedBox(
-                                                    width: double.infinity,
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(Icons.add, color: Theme.of(context).colorScheme.primary,),
-                                                        const SizedBox(width: 10,),
-                                                        Text("New Category", style: Theme.of(context).textTheme.bodyMedium),
-                                                      ],
-                                                    ),
-                                                  )
-                                              ),
-                                            )
-                                        );
-                                      }
-                                      Category category = _categories[index];
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 25, left: 15, right: 15),
+                              width: double.infinity,
+                              child: Wrap(
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: List.generate(_categories.length + 1, (index){
+                                    if(_categories.length == index){
                                       return ConstrainedBox(
                                           constraints:   const BoxConstraints(minWidth: 0,),
                                           child:  IntrinsicWidth(
-                                              child:MaterialButton(
-                                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                                  shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(15),
-                                                      side: BorderSide(
-                                                          width: 1.5,
-                                                          color: _category?.id == category.id ? Theme.of(context).colorScheme.primary : Colors.transparent
-                                                      )
+                                            child:MaterialButton(
+                                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(15),
+                                                    side: const BorderSide(
+                                                        width: 1.5,
+                                                        color: Colors.transparent
+                                                    )
+                                                ),
+                                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
+                                                elevation: 0,
+                                                focusElevation: 0,
+                                                hoverElevation: 0,
+                                                highlightElevation: 0,
+                                                disabledElevation: 0,
+                                                onPressed: (){
+                                                  showDialog(context: context, builder: (builder)=> CategoryForm(userId: widget.userId,
+                                                    onSave: () {
+                                                      loadCategories(); // Refresh accounts list after saving
+                                                    },));
+                                                },
+                                                child:  SizedBox(
+                                                  width: double.infinity,
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.add, color: Theme.of(context).colorScheme.primary,),
+                                                      const SizedBox(width: 10,),
+                                                      Text("New Category", style: Theme.of(context).textTheme.bodyMedium),
+                                                    ],
                                                   ),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
-                                                  elevation: 0,
-                                                  focusElevation: 0,
-                                                  hoverElevation: 0,
-                                                  highlightElevation: 0,
-                                                  disabledElevation: 0,
-                                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                  onPressed: (){
-                                                    setState(() {
-                                                      _category = category;
-                                                    });
-                                                  },
-                                                  onLongPress: (){
-                                                    showDialog(context: context, builder: (builder)=>CategoryForm(category: category,));
-                                                  },
-                                                  child:  SizedBox(
-                                                    width: double.infinity,
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(Icons.category_outlined, color: Colors.pink),
-                                                        const SizedBox(width: 10,),
-                                                        Text(category.name, style: Theme.of(context).textTheme.bodyMedium, overflow: TextOverflow.ellipsis,),
-                                                      ],
-                                                    ),
-                                                  )
-                                              )
+                                                )
+                                            ),
                                           )
                                       );
+                                    }
+                                    Category category = _categories[index];
+                                    return ConstrainedBox(
+                                        constraints:   const BoxConstraints(minWidth: 0,),
+                                        child:  IntrinsicWidth(
+                                            child:MaterialButton(
+                                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(15),
+                                                    side: BorderSide(
+                                                        width: 1.5,
+                                                        color: _category?.id == category.id ? Theme.of(context).colorScheme.primary : Colors.transparent
+                                                    )
+                                                ),
+                                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
+                                                elevation: 0,
+                                                focusElevation: 0,
+                                                hoverElevation: 0,
+                                                highlightElevation: 0,
+                                                disabledElevation: 0,
+                                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                onPressed: (){
+                                                  setState(() {
+                                                    _category = category;
+                                                  });
+                                                },
+                                                onLongPress: (){
+                                                  showDialog(context: context, builder: (builder)=>CategoryForm(category: category,));
+                                                },
+                                                child:  SizedBox(
+                                                  width: double.infinity,
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.category_outlined, color: Colors.pink),
+                                                      const SizedBox(width: 10,),
+                                                      Text(category.name, style: Theme.of(context).textTheme.bodyMedium, overflow: TextOverflow.ellipsis,),
+                                                    ],
+                                                  ),
+                                                )
+                                            )
+                                        )
+                                    );
 
-                                    })
+                                  })
 
-                                ),
                               ),
                             )
                           ],
@@ -730,7 +776,7 @@ class _PaymentForm extends State<PaymentForm>{
                   labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   isFullWidth: true,
                   onPressed: _amount! > 0 && _account!=null  ? (){
-                    if((_type == TransactionType.debit && _category!=null) || _type == TransactionType.credit) {
+                    if(_category!=null) {
                       handleSaveTransaction(context);
                     }
                   } : null,

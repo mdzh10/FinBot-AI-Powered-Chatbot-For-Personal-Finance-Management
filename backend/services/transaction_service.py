@@ -79,7 +79,6 @@ async def add_transactions(
     transaction_details_list = []
     is_exceed = False
 
-    # Assume all transactions belong to the same account (based on first transaction's account_id)
     if not transactions:
         raise HTTPException(status_code=400, detail="No transactions provided")
 
@@ -143,11 +142,11 @@ async def add_transactions(
         db.commit()  # Commit changes to ensure expense and balance updates
         db.refresh(new_transaction)  # Refresh transaction to get the latest state
 
-    if category:
-        db.refresh(category)  # Ensure the latest category state is fetched
-        # Check if category expense exceeds budget
-        if category.expense > category.budget:
-            is_exceed = True
+        # Refresh category if it exists after the transaction is added
+        if category:
+            db.refresh(category)  # Ensure the latest category state is fetched
+            if category.expense > category.budget:
+                is_exceed = True
 
         # Convert to Pydantic models
         account_details = AccountDetails.from_orm(account)
@@ -166,7 +165,7 @@ async def add_transactions(
         )
         transaction_details_list.append(transaction_details)
 
-    # Refresh account and category after all transactions are processed
+    # Final commit and refresh after all transactions are processed
     db.commit()
     db.refresh(account)
     for category in categories.values():

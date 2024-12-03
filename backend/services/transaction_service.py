@@ -140,13 +140,14 @@ async def add_transactions(
             if category:
                 category.expense += new_transaction.amount
 
-        # Check if category expense exceeds budget
-        if category and category.expense and category.budget:
-            if category.expense > category.budget:
-                is_exceed = True
+        db.commit()  # Commit changes to ensure expense and balance updates
+        db.refresh(new_transaction)  # Refresh transaction to get the latest state
 
-        db.commit()
-        db.refresh(new_transaction)
+    if category:
+        db.refresh(category)  # Ensure the latest category state is fetched
+        # Check if category expense exceeds budget
+        if category.expense > category.budget:
+            is_exceed = True
 
         # Convert to Pydantic models
         account_details = AccountDetails.from_orm(account)
@@ -158,7 +159,7 @@ async def add_transactions(
             category=category_details,
             title=new_transaction.title,
             description=new_transaction.description,
-            isExceed=is_exceed,  # Set isExceed flag
+            isExceed=is_exceed,
             amount=new_transaction.amount,
             type=new_transaction.type,
             datetime=new_transaction.datetime,

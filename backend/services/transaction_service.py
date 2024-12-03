@@ -77,6 +77,7 @@ async def add_transactions(
     db: Session, transactions: List[TransactionCreate]
 ) -> TransactionListResponse:
     transaction_details_list = []
+    is_exceed = False
 
     # Assume all transactions belong to the same account (based on first transaction's account_id)
     if not transactions:
@@ -87,13 +88,13 @@ async def add_transactions(
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    
+
     # Check if today is the start of the month and reset category expenses if needed
     today = datetime.now().date()
     if today.day == 1:
         db.query(Category).update({Category.expense: 0.0})
         db.commit()
-        
+
     # Fetch categories once for all category_ids in the transactions
     category_ids = {
         transaction.category_id
@@ -122,11 +123,7 @@ async def add_transactions(
             title=transaction.title,
             description=transaction.description,
             amount=transaction.amount,
-            type=(
-                PaymentTypeEnum.debit
-                if transaction.type == "debit"
-                else PaymentTypeEnum.credit
-            ),
+            type=transaction.type,
             datetime=transaction.datetime,
         )
         db.add(new_transaction)
@@ -135,8 +132,6 @@ async def add_transactions(
         if new_transaction.type == PaymentTypeEnum.credit:
             account.balance += new_transaction.amount
             account.credit += new_transaction.amount  # Track total credits
-            if category:
-                category.expense -= new_transaction.amount
         elif new_transaction.type == PaymentTypeEnum.debit:
             if account.balance < new_transaction.amount:
                 raise HTTPException(status_code=400, detail="Insufficient balance")
@@ -145,11 +140,14 @@ async def add_transactions(
             if category:
                 category.expense += new_transaction.amount
 
-        # Check if category expense exceeds budget
-        is_exceed = True if category and category.expense > category.budget else False
+        db.commit()  # Commit changes to ensure expense and balance updates
+        db.refresh(new_transaction)  # Refresh transaction to get the latest state
 
-        db.commit()
-        db.refresh(new_transaction)
+    if category:
+        db.refresh(category)  # Ensure the latest category state is fetched
+        # Check if category expense exceeds budget
+        if category.expense > category.budget:
+            is_exceed = True
 
         # Convert to Pydantic models
         account_details = AccountDetails.from_orm(account)
@@ -161,7 +159,7 @@ async def add_transactions(
             category=category_details,
             title=new_transaction.title,
             description=new_transaction.description,
-            isExceed=is_exceed,  # Set isExceed flag
+            isExceed=is_exceed,
             amount=new_transaction.amount,
             type=new_transaction.type,
             datetime=new_transaction.datetime,
@@ -169,8 +167,10 @@ async def add_transactions(
         transaction_details_list.append(transaction_details)
 
     # Refresh account and category after all transactions are processed
+    db.commit()
     db.refresh(account)
     for category in categories.values():
+        db.commit()
         db.refresh(category)
 
     return TransactionListResponse(

@@ -14,7 +14,7 @@ from schemas.transaction_schema import (
 )
 from services.transaction_service import (
     get_all_transactions,
-    add_transaction,
+    add_transactions,
     update_transaction,
     delete_transaction_by_id,
 )
@@ -67,19 +67,22 @@ def sample_category():
 
 ### Test: Get All Transactions
 @pytest.mark.asyncio
-async def test_get_all_transactions(db_session, sample_transaction, sample_account, sample_category):
-    db_session.query.return_value.filter.return_value.all.return_value = [sample_transaction]
+async def test_get_all_transactions(
+    db_session, sample_transaction, sample_account, sample_category
+):
+    db_session.query.return_value.filter.return_value.all.return_value = [
+        sample_transaction
+    ]
     db_session.query.return_value.filter.return_value.all.side_effect = [
         [sample_transaction],  # Transactions
-        [sample_account],      # Accounts
-        [sample_category],     # Categories
+        [sample_account],  # Accounts
+        [sample_category],  # Categories
     ]
 
     response = await get_all_transactions(db_session, user_id=1)
     print(response)
 
 
-### Test: Add Transaction
 @pytest.mark.asyncio
 async def test_add_transaction(db_session, sample_account, sample_category):
     transaction_data = TransactionCreate(
@@ -89,25 +92,39 @@ async def test_add_transaction(db_session, sample_account, sample_category):
         title="New Transaction",
         description="Adding a test transaction",
         amount=100,
-        type="debit",
+        type=PaymentTypeEnum.debit,
         datetime=datetime.now(),
     )
-    
-    db_session.add.return_value = None
-    db_session.refresh.side_effect = lambda obj: setattr(obj, "id", 1)  
 
+    # Mock the behavior of the database session
+    db_session.add.return_value = None
+    db_session.refresh.side_effect = lambda obj: setattr(obj, "id", 1)  # Mock `refresh`
+
+    # Mock account and category queries
     db_session.query.return_value.filter.return_value.first.side_effect = [
-        sample_account,  
-        sample_category, 
+        sample_account,  # Mock the account query
+        sample_category,  # Mock the category query
     ]
 
-    response = await add_transaction(db_session, transaction_data)
+    # Mock `db.query(Category).filter(...).all()` for fetching categories
+    db_session.query.return_value.filter.return_value.all.return_value = [
+        sample_category
+    ]
 
-    assert response.msg == "Transaction created successfully"
+    # Call the service function with a list of transactions
+    response = await add_transactions(db_session, [transaction_data])
+
+    # Assertions
+    assert response.msg == "Transactions created successfully"
+    assert len(response.transactions) == 1
     assert response.transactions[0].id == 1
+    assert response.transactions[0].title == "New Transaction"
+
 
 @pytest.mark.asyncio
-async def test_update_transaction(db_session, sample_transaction, sample_account, sample_category):
+async def test_update_transaction(
+    db_session, sample_transaction, sample_account, sample_category
+):
     transaction = TransactionUpdate(
         id=1,
         user_id=1,
@@ -122,10 +139,10 @@ async def test_update_transaction(db_session, sample_transaction, sample_account
 
     # Mock responses for queries
     db_session.query.return_value.filter.return_value.first.side_effect = [
-        sample_transaction, 
-        sample_account,     
-        sample_category,     
-        sample_category,    
+        sample_transaction,
+        sample_account,
+        sample_category,
+        sample_category,
     ]
 
     # Mock `type` attribute
@@ -145,11 +162,13 @@ async def test_update_transaction(db_session, sample_transaction, sample_account
 
 ### Test: Delete Transaction
 @pytest.mark.asyncio
-async def test_delete_transaction_by_id(db_session, sample_transaction, sample_account, sample_category):
+async def test_delete_transaction_by_id(
+    db_session, sample_transaction, sample_account, sample_category
+):
     db_session.query.return_value.filter.return_value.first.side_effect = [
-        sample_transaction, 
-        sample_account,     
-        sample_category,    
+        sample_transaction,
+        sample_account,
+        sample_category,
     ]
 
     response = await delete_transaction_by_id(db_session, transaction_id=1)

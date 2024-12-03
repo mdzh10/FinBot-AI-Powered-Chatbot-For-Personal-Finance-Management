@@ -111,6 +111,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: null,
         title: const Text("Accounts", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
       ),
       body: Stack(

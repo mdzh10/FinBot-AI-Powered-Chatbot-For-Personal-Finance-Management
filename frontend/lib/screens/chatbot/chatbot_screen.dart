@@ -65,7 +65,7 @@ class _ChatPageState extends State<ChatPage> {
           String chartData = jsonResponse['chart'];
 
           if (chartData == null || chartData.isEmpty) {
-            _showError('Received empty image data from API.');
+            _showError('Could not process the prompt');
             return;
           }
 
@@ -95,7 +95,7 @@ class _ChatPageState extends State<ChatPage> {
           _showError(jsonResponse['msg'] ?? 'Failed to generate image.');
         }
       } else {
-        _showError('Server error: ${response.statusCode}');
+        _showError('Sorry, I do not have relevant information, its in beta right now for plot generation. Do you want to generate(income/expense) plot for any specific month/day?');
       }
     } catch (e) {
       _showError('An error occurred: $e');
@@ -121,8 +121,8 @@ class _ChatPageState extends State<ChatPage> {
     bool isUser = message['sender'] == 'user';
     CrossAxisAlignment crossAxisAlignment = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     MainAxisAlignment mainAxisAlignment = isUser ? MainAxisAlignment.end : MainAxisAlignment.start;
-    Color bubbleColor = isUser ? Colors.blueAccent : Colors.grey.shade200;
-    TextStyle textStyle = TextStyle(color: isUser ? Colors.white : Colors.black87, fontSize: 16);
+    Color bubbleColor = isUser ? Colors.green.shade400 : Colors.deepPurple;
+    TextStyle textStyle = TextStyle(color: isUser ? Colors.white70 : Colors.white70, fontSize: 16);
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 5),
@@ -175,6 +175,7 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: null,
         title: const Text("Generate plots", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
       ),
       body: Column(

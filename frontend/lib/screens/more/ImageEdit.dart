@@ -339,8 +339,9 @@ class _UploadImageScreenState extends State<UploadImageScreen> {
     print("Transactions: $_transactions");
 
     return Scaffold(
+
       appBar: AppBar(
-        title: Text("Upload Image"),
+        title: Text("Upload Image", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
         actions: [
           // Recapture Button
           IconButton(

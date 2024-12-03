@@ -101,7 +101,7 @@ class _ImageCapturePageState extends State<ImageCapturePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Capture or Upload Image')),
+      appBar: AppBar(title: Text('Capture or Upload Image',  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18),)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

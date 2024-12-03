@@ -77,15 +77,18 @@ class _SigninPageState extends State<SigninPage> {
                 : Row(
               children: [
                 loginResponse.isSuccess
-                    ? Icon(Icons.check_circle_outline, color: Colors.green, size: 40)
-                    : Icon(Icons.close, color: Colors.redAccent, size: 40),
-
+                    ? Icon(Icons.check_circle_outline,
+                    color: Colors.green, size: 40)
+                    : Icon(Icons.close,
+                    color: Colors.redAccent, size: 40),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
                   child: Text(
                     loginResponse.isSuccess ? "Success" : "Error",
                     style: TextStyle(
-                        color: loginResponse.isSuccess ? Colors.green : Colors.redAccent),
+                        color: loginResponse.isSuccess
+                            ? Colors.green
+                            : Colors.redAccent),
                   ),
                 )
               ],
@@ -102,14 +105,18 @@ class _SigninPageState extends State<SigninPage> {
                 onPressed: () {
                   print(loginResponse.accessToken);
                   cubit.updateAccessToken(loginResponse.accessToken);
-                  cubit.updateUserDetails(loginResponse.userName, loginResponse.userId);
+                  cubit.updateUserDetails(
+                      loginResponse.userName, loginResponse.userId);
                   setState(() {
                     _message = loginResponse.msg;
                   });
                   Navigator.of(context).pop(); // Close the dialog
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => MainScreen()), // Navigate to MainScreen
+
+                  // Navigate to MainScreen and remove all previous routes
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                        builder: (context) => MainScreen()),
+                        (Route<dynamic> route) => false,
                   );
                 },
                 size: AppButtonSize.large,

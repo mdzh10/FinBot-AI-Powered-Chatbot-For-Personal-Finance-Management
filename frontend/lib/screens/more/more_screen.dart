@@ -33,6 +33,7 @@ class _MoreScreenState extends State<MoreScreen> {
     ThemeData theme = Theme.of(context);
     return Scaffold(
         appBar: AppBar(
+          leading: null,
           title: const Text("More", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),),
         ),
         body: ListView(

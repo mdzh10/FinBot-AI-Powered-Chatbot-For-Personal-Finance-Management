@@ -8,12 +8,11 @@ router = APIRouter()
 @router.post("/extract-items/", response_model=ReceiptResponse)
 async def extract_items(
     user_id: int = Form(...),
-    account_id: int = Form(...),
     file: UploadFile = File(...),
 ):
     try:
         # Create a ReceiptTransactionCreate object
-        receipt = ReceiptTransactionCreate(user_id=user_id, account_id=account_id)
+        receipt = ReceiptTransactionCreate(user_id=user_id)
         return await process_receipt(receipt, file)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

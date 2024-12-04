@@ -54,4 +54,4 @@ async def root():
 
 @app.get("/checkCiCd")
 async def root():
-    return {"message": "Successfully deployed with cicd1"}
+    return {"message": "test"}

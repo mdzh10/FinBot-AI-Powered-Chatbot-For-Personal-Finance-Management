@@ -145,7 +145,7 @@ async def add_transactions(
         # Refresh category if it exists after the transaction is added
         if category:
             db.refresh(category)  # Ensure the latest category state is fetched
-            if category.expense > category.budget:
+            if category.expense is not None and category.budget is not None and category.expense > category.budget:
                 is_exceed = True
 
         # Convert to Pydantic models

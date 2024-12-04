@@ -3,13 +3,9 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 from PIL import Image
 import io
-import base64
-from datetime import datetime
-from models.transaction import PaymentTypeEnum
 from main import app  # Assuming your FastAPI app is in main.py
-from services.receipt_service import encode_image, process_receipt, extract_items_from_image
-from schemas.receipt_schema import ReceiptTransactionCreate, ReceiptResponse, ItemDetails
-from schemas.transaction_schema import TransactionCreate, TransactionListResponse
+from services.receipt_service import encode_image, extract_items_from_image
+from schemas.receipt_schema import ItemDetails
 
 # Create test client
 client = TestClient(app)

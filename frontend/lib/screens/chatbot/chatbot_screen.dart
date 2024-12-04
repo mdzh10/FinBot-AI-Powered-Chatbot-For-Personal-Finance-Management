@@ -3,10 +3,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
 class ChatPage extends StatefulWidget {
   final int? userId;
 
-  ChatPage(this.userId , {super.key});  // Default userId is '1'
+  ChatPage(this.userId, {super.key}); // Default userId is '1'
 
   @override
   _ChatPageState createState() => _ChatPageState();
@@ -18,11 +19,10 @@ class _ChatPageState extends State<ChatPage> {
   bool _isLoading = false;
   ScrollController _scrollController = ScrollController();
 
-
-
   @override
   void dispose() {
     _promptController.dispose();
+    _scrollController.dispose(); // Dispose the controller
     super.dispose();
   }
 
@@ -41,6 +41,8 @@ class _ChatPageState extends State<ChatPage> {
       _isLoading = true;
     });
 
+    _scrollToBottom(); // Scroll after adding user message
+
     String finalPrompt = "user id is ${widget.userId} and $userPrompt";
 
     Map<String, dynamic> requestBody = {
@@ -51,7 +53,8 @@ class _ChatPageState extends State<ChatPage> {
 
     try {
       var response = await http.post(
-        Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/report/generate-plots/'),  // Replace with your API endpoint
+        Uri.parse(
+            'https://finbot-fastapi-rc4376baha-ue.a.run.app/report/generate-plots/'), // Replace with your API endpoint
         headers: {"Content-Type": "application/json"},
         body: json.encode(requestBody),
       );
@@ -71,13 +74,12 @@ class _ChatPageState extends State<ChatPage> {
 
           // Remove data URL prefix
           final regex = RegExp(r'data:image/[^;]+;base64,');
-          chartData = chartData.replaceFirst(regex, '');
-          print('Base64 string length: ${chartData.length}');
-
+          String base64Image = chartData.replaceFirst(regex, '');
+          print('Base64 string length: ${base64Image.length}');
 
           Uint8List imageBytes;
           try {
-            imageBytes = base64Decode(chartData);
+            imageBytes = base64Decode(base64Image);
           } catch (e) {
             _showError('Error decoding image data: $e');
             return;
@@ -88,14 +90,17 @@ class _ChatPageState extends State<ChatPage> {
             _messages.add({
               'sender': 'system',
               'type': 'image',
-              'content': chartData,
+              'content': imageBytes, // Store bytes instead of base64 string
             });
           });
+
+          _scrollToBottom(); // Scroll after adding image
         } else {
           _showError(jsonResponse['msg'] ?? 'Failed to generate image.');
         }
       } else {
-        _showError('Sorry, I do not have relevant information, its in beta right now for plot generation. Do you want to generate(income/expense) plot for any specific month/day?');
+        _showError(
+            'Sorry, I do not have relevant information. It\'s in beta right now for plot generation. Do you want to generate (income/expense) plot for any specific month/day?');
       }
     } catch (e) {
       _showError('An error occurred: $e');
@@ -115,14 +120,32 @@ class _ChatPageState extends State<ChatPage> {
         'content': message,
       });
     });
+
+    _scrollToBottom(); // Scroll after adding error message
+  }
+
+  void _scrollToBottom() {
+    // Delay to ensure that the new message has been rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent + 100,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   Widget _buildMessage(Map<String, dynamic> message) {
     bool isUser = message['sender'] == 'user';
-    CrossAxisAlignment crossAxisAlignment = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    MainAxisAlignment mainAxisAlignment = isUser ? MainAxisAlignment.end : MainAxisAlignment.start;
+    CrossAxisAlignment crossAxisAlignment =
+    isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    MainAxisAlignment mainAxisAlignment =
+    isUser ? MainAxisAlignment.end : MainAxisAlignment.start;
     Color bubbleColor = isUser ? Colors.green.shade400 : Colors.deepPurple;
-    TextStyle textStyle = TextStyle(color: isUser ? Colors.white70 : Colors.white70, fontSize: 16);
+    TextStyle textStyle =
+    TextStyle(color: Colors.white70, fontSize: 16); // Unified color
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 5),
@@ -150,7 +173,7 @@ class _ChatPageState extends State<ChatPage> {
                     maxHeight: 200,
                   ),
                   child: Image.memory(
-                    base64Decode(message['content']),
+                    message['content'], // Use Uint8List directly
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Text('Error loading image', style: textStyle);
@@ -166,22 +189,22 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-    final isKeyboardVisible =
-        MediaQuery.of(context).viewInsets.bottom != 0;
+    // final isKeyboardVisible =
+    //     MediaQuery.of(context).viewInsets.bottom != 0;
 
     return Scaffold(
       appBar: AppBar(
         leading: null,
-        title: const Text("Generate plots", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
+        title: const Text("Generate Plots",
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollController, // Assign the controller
               padding: EdgeInsets.all(16.0),
               reverse: false,
               itemCount: _messages.length,
@@ -207,7 +230,7 @@ class _ChatPageState extends State<ChatPage> {
                     child: TextField(
                       controller: _promptController,
                       maxLines: null, // Allows unlimited lines
-                      minLines: 1,    // Starts with one line
+                      minLines: 1, // Starts with one line
                       keyboardType: TextInputType.multiline,
                       decoration: InputDecoration(
                         hintText: 'Type your message...',

@@ -1,4 +1,3 @@
-
 import "dart:convert";
 import "dart:io";
 import "package:finbot/models/Account.dart";
@@ -7,49 +6,79 @@ import "package:finbot/models/CategoryResponseModel.dart";
 import "package:finbot/models/category.model.dart";
 import 'package:http/http.dart' as http;
 import "package:path_provider/path_provider.dart";
-import "package:permission_handler/permission_handler.dart";
 
+import "package:flutter/material.dart";
+import "package:permission_handler/permission_handler.dart"; // Needed for BuildContext
 
-Future<String> getExternalDocumentPath() async {
-  // To check whether permission is given for this app or not.
+Future<String?> getExternalDocumentPath(BuildContext context) async {
+  // Request storage permissions
   var status = await Permission.storage.status;
   if (!status.isGranted) {
-    // If not we will ask for permission first
-    await Permission.storage.request();
+    status = await Permission.storage.request();
+    if (!status.isGranted) {
+      // Inform the user that permission is needed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Storage permission is required to export data.")),
+      );
+      return null;
+    }
   }
-  Directory directory = Directory("");
+
+  Directory? directory;
   if (Platform.isAndroid) {
-    // Redirects it to download folder in android
-    directory = Directory("/storage/emulated/0/Download");
+    // Retrieve the Downloads directory
+    List<Directory>? dirs =
+    await getExternalStorageDirectories(type: StorageDirectory.downloads);
+    if (dirs != null && dirs.isNotEmpty) {
+      directory = dirs.first;
+    } else {
+      // Fallback to a default path if the Downloads directory is not found
+      directory = Directory("/storage/emulated/0/Download");
+    }
   } else {
+    // For iOS, use the application documents directory
     directory = await getApplicationDocumentsDirectory();
   }
 
-  final exPath = directory.path;
-  await Directory(exPath).create(recursive: true);
-  return exPath;
-}
-Future<dynamic> export(int userId) async {
-  List<dynamic> accounts = await loadAccount(userId);
-  List<dynamic> categories = await loadCategory(userId);
-  // List<dynamic> payments = await database!.query("payments",);
-  Map<String, dynamic> data = {};
-  data["accounts"] = accounts;
-  data["categories"] = categories;
-  // data["payments"] = payments;
+  if (directory != null) {
+    // Ensure the directory exists
+    await directory.create(recursive: true);
+    return directory.path;
+  }
 
-  final path = await getExternalDocumentPath();
-  String name = "fintracker-backup-${DateTime.now().millisecondsSinceEpoch}.json";
-  File file= File('$path/$name');
-  await file.writeAsString(jsonEncode(data));
-  return file.path;
+  return null;
+}
+
+Future<String> export(int userId, BuildContext context) async {
+  try {
+    List<Account> accounts = await loadAccount(userId);
+    List<Category> categories = await loadCategory(userId);
+
+    Map<String, dynamic> data = {
+      "accounts": accounts.map((e) => e.toJson()).toList(),
+      "categories": categories.map((e) => e.toJson()).toList(),
+      // Add other data as needed
+    };
+
+    final path = await getExternalDocumentPath(context);
+    if (path == null) {
+      throw Exception("Storage permission not granted or path not found.");
+    }
+
+    String name = "finbot-backup-${DateTime.now().millisecondsSinceEpoch}.json";
+    File file = File('$path/$name');
+    await file.writeAsString(jsonEncode(data));
+    return file.path;
+  } catch (e) {
+    throw Exception("Failed to export data: $e");
+  }
 }
 
 Future<List<Account>> loadAccount(int? userId) async {
-
   AccountResponseModel? accountResponseModel;
 
-  final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/" + userId.toString();
+  final String apiUrl =
+      "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/" + userId.toString();
   final response = await http.get(
     Uri.parse(apiUrl),
     headers: {"Content-Type": "application/json"},
@@ -63,14 +92,13 @@ Future<List<Account>> loadAccount(int? userId) async {
   }
 
   return accountResponseModel.accounts;
-
 }
 
 Future<List<Category>> loadCategory(int? userId) async {
-
   CategoryResponse? categoryResponse;
 
-  final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/category/" + userId.toString();
+  final String apiUrl =
+      "https://finbot-fastapi-rc4376baha-ue.a.run.app/category/" + userId.toString();
   final response = await http.get(
     Uri.parse(apiUrl),
     headers: {"Content-Type": "application/json"},
@@ -83,6 +111,4 @@ Future<List<Category>> loadCategory(int? userId) async {
     throw Exception('Failed to load categories');
   }
   return categoryResponse.categories;
-
 }
-

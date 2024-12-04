@@ -136,7 +136,7 @@ Ensure you have the following installed and set up:
   - Check logs in GitHub Actions and GCP for errors during deployment.
 
 - **References**:
-  - Watch the [YouTube tutorial](https://www.youtube.com/watch?v=DQwAX5pS4E8&t=1059s) for a detailed walkthrough.
+  - Watch the [YouTube tutorial](https://www.youtube.com/watch?v=DQwAX5pS4E8) for a detailed walkthrough.
 
 ---
 

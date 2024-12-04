@@ -11,6 +11,7 @@
 migrate_working_dir/
 *.zip
 *secrets/
+*cache*
 
 # IntelliJ related
 *.iml

@@ -42,4 +42,4 @@
 If you have any questions or need support, feel free to:
 
 - Open an issue in this repository [here](https://github.com/mdzh10/FinBot-AI-Powered-Chatbot-For-Personal-Finance-Management/issues).
-- Contact the project maintainers directly via email: [ mdzh1997@gmail.com, rifatfahmida00@gmail.com]
+<!-- - Contact the project maintainers directly via email: [ mdzh1997@gmail.com, rifatfahmida00@gmail.com] -->

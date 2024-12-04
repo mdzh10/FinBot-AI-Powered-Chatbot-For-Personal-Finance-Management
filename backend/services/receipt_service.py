@@ -9,10 +9,7 @@ from fastapi import UploadFile
 from models.transaction import PaymentTypeEnum
 from schemas.transaction_schema import TransactionCreate
 from config.config import settings
-from schemas.receipt_schema import (
-    ItemDetails,
-    ReceiptResponse
-    )
+from schemas.receipt_schema import ItemDetails, ReceiptResponse
 from typing import List
 
 # Replace 'your_gpt4_api_key' with your actual GPT-4 API key
@@ -30,6 +27,19 @@ def encode_image(image: Image.Image) -> str:
     buffered = io.BytesIO()
     image.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+
+def clean_item_and_price(item, price):
+    # Remove non-alphabetic characters from the item name
+    clean_item = re.sub(r"[^a-zA-Z\s]", "", item).strip()
+    # Remove non-numeric characters from the price
+    clean_price = re.sub(r"[^0-9.]", "", price).strip()
+    # Convert price to float
+    try:
+        clean_price = float(clean_price)
+    except ValueError:
+        clean_price = 0.0  # Default to 0.0 if conversion fails
+    return clean_item, clean_price
 
 
 def extract_items_from_image(base64_image: str) -> List[ItemDetails]:
@@ -53,7 +63,7 @@ def extract_items_from_image(base64_image: str) -> List[ItemDetails]:
                     {
                         "type": "text",
                         # "text": "Extract the purchased items, their category, and price of each items from this receipt image",
-                        "text": "Extract the purchased items and price of each items from this receipt image. Do not add any explanation with your response",
+                        "text": "Extract the purchased items and price of each items from this receipt image in item-price pair such that all responses are in same format. Do not add any explanation with your response",
                     },
                     {
                         "type": "image_url",
@@ -68,45 +78,31 @@ def extract_items_from_image(base64_image: str) -> List[ItemDetails]:
     # Send the request to GPT-4
     response = requests.post(GPT4_API_URL, headers=headers, json=data)
     result = response.json()
-
+    
     # Extract the items from the response
     extracted_text = result["choices"][0]["message"]["content"]
 
     # Assuming the text is structured as: item, category, price
     items = []
 
-    # Define regex pattern to match "item name: $price"
-    pattern = r"-\s(.+?):\s\$(\d+\.\d{2})"
-
-    # Find all matches for item name and price
-    matches = re.findall(pattern, extracted_text)
-
-    # # Define regex patterns to extract item, category, and price
-    # item_pattern = r"\*\*(.+?)\*\*"  # Extracts the item name between double asterisks
-    # category_pattern = (
-    #     r"Category:\s+([A-Za-z\s]+)"  # Extracts the category after "Category:"
-    # )
-    # price_pattern = r"Price:\s+\$(\d+\.\d{2})"  # Extracts the price after "Price:"
-
-    # # Find all matches for item names, categories, and prices
-    # item_matches = re.findall(item_pattern, extracted_text)
-    # category_matches = re.findall(category_pattern, extracted_text)
-    # price_matches = re.findall(price_pattern, extracted_text)
-
-    # Zip the results together to create structured data
-    # for item, category, price in zip(item_matches, category_matches, price_matches):
-    # Convert matches into structured data
-    for item_name, price in matches:
-        items.append(
-            ItemDetails(item_name=item_name.strip(), price=float(price.strip()))
-        )
+    # Split the extracted text into lines
+    lines = extracted_text.splitlines()
+    print(lines)
+    # Process each line to find matches
+    for line in lines:
+        # Regex to split the line into item and price
+        match = re.match(r"(.*?)(\d+(\.\d+)?$)", line.strip())
+        if match:
+            raw_item = match.group(1)
+            raw_price = match.group(2)
+            # Clean the extracted item and price
+            item_name, price = clean_item_and_price(raw_item, raw_price)
+            items.append(ItemDetails(item_name=item_name, price=price))
 
     return items
 
 
-async def process_receipt(
-    user_id, file: UploadFile
-) -> ReceiptResponse:
+async def process_receipt(user_id, file: UploadFile) -> ReceiptResponse:
     """Processes the receipt image and extracts items, saving them to the database."""
     image = Image.open(io.BytesIO(await file.read()))
     base64_image = encode_image(image)

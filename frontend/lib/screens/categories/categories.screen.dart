@@ -84,6 +84,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         onSave: () {
           loadData();
         },
+        onDelete: () {
+          loadData();
+        },
       ),
     );
   }

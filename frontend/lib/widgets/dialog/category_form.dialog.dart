@@ -228,7 +228,7 @@ class _CategoryForm extends State<CategoryForm> {
                     : () {
                   onDelete(context, _category?.id ?? 0);
                 },
-                color: Theme.of(context).colorScheme.primary,
+                color: Colors.red,
                 label: "Delete",
               ),
             ),

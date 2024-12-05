@@ -56,7 +56,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       _isLoading = true;
     });
 
-    final String apiUrl = "http://192.168.224.192:8000/category/" + widget.userId.toString();
+    final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/category/" + widget.userId.toString();
     final response = await http.get(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},
@@ -82,6 +82,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         category: category,
         userId: widget.userId,
         onSave: () {
+          loadData();
+        },
+        onDelete: () {
           loadData();
         },
       ),

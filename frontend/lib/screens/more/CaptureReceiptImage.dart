@@ -1,16 +1,27 @@
+import 'dart:convert';
 import 'dart:io';
-
+import 'package:finbot/models/ReceiptResponse.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+
+import 'ImageEdit.dart';
 
 class ImageCapturePage extends StatefulWidget {
+  final int? userId;
+
+  const ImageCapturePage({super.key, this.userId});
+
   @override
-  _ImageCapturePageState createState() => _ImageCapturePageState();
+  State<ImageCapturePage> createState() => _ImageCapturePageState();
 }
 
 class _ImageCapturePageState extends State<ImageCapturePage> {
   File? _image;
   final picker = ImagePicker();
+  final String apiUrl = 'https://finbot-fastapi-rc4376baha-ue.a.run.app/transactions/add';
+  bool _isLoading = false; // Track loading state
+  ReceiptResponse? _receiptResponse;
 
   Future<void> _getImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
@@ -18,130 +29,111 @@ class _ImageCapturePageState extends State<ImageCapturePage> {
       setState(() {
         _image = File(pickedFile.path);
       });
-      // Simulating API call with the selected image
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ImageEditPage(image: _image!),
-        ),
-      );
+
+      // Start loading when API call begins
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Simulate API call with the selected image and getting receipt data
+      _receiptResponse = await _fetchReceiptData(pickedFile);
+
+      // End loading after receiving response
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (_receiptResponse?.transactions != null && _receiptResponse?.transactions != []) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UploadImageScreen(
+              transactions: _receiptResponse?.transactions ?? [], // Provide empty list if null
+              userId: widget.userId,
+            ),
+          ),
+        );
+      } else {
+        // Show a SnackBar if no transactions are found
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No transactions found.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+
+
+
+    }
+  }
+
+  Future<ReceiptResponse?> _fetchReceiptData(XFile? image) async {
+    final Uri apiUrl = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/receipt/extract-items/');  // Replace with your actual API URL
+
+    var request = http.MultipartRequest('POST', apiUrl);
+
+    // Add user_id as a field
+    request.fields['user_id'] = widget.userId.toString();
+
+    // Add file as binary data
+    request.files.add(await http.MultipartFile.fromPath('file', _image!.path));
+
+    try {
+      // Send the request
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseString = await response.stream.bytesToString();
+        final responseData = json.decode(responseString);
+        ReceiptResponse receiptResponse = ReceiptResponse.fromJson(responseData);
+        print(receiptResponse);
+        return receiptResponse;
+      } else {
+        print('API request failed with status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error during API call: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Capture or Upload Image')),
+      appBar: AppBar(title: Text('Capture or Upload Image',  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18),)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton.icon(
-              icon: Icon(Icons.camera_alt),
-              label: Text('Capture Image'),
-              onPressed: () => _getImage(ImageSource.camera),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton.icon(
-              icon: Icon(Icons.upload_file),
-              label: Text('Upload Image'),
-              onPressed: () => _getImage(ImageSource.gallery),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ImageEditPage extends StatefulWidget {
-  final File image;
-
-  ImageEditPage({required this.image});
-
-  @override
-  _ImageEditPageState createState() => _ImageEditPageState();
-}
-
-class _ImageEditPageState extends State<ImageEditPage> {
-  TextEditingController _apiResponseController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchApiResponse(); // Simulating API call on image upload
-  }
-
-  Future<void> _fetchApiResponse() async {
-    // Simulate an API response for the image
-    await Future.delayed(Duration(seconds: 2));
-    setState(() {
-      _apiResponseController.text = "Sample API response for the image";
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Edit Details')),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            Image.file(widget.image, height: 200),
-            SizedBox(height: 20),
-            TextField(
-              controller: _apiResponseController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Edit Details',
-              ),
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    // Save details and go back to capture page
-                    Navigator.pop(context);
-                  },
-                  child: Text('Save'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+            // If loading, show CircularProgressIndicator
+            if (_isLoading)
+              CircularProgressIndicator()
+            else ...[
+              ElevatedButton.icon(
+                icon: Icon(Icons.camera_alt),
+                label: Text('Capture Image'),
+                onPressed: () => _getImage(ImageSource.camera),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Navigate back to the capture page
-                    Navigator.pop(context);
-                  },
-                  child: Text('Recapture/Upload'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton.icon(
+                icon: Icon(Icons.upload_file),
+                label: Text('Upload Image'),
+                onPressed: () => _getImage(ImageSource.gallery),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ],
         ),
       ),

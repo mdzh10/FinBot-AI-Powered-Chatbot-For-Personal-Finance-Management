@@ -15,9 +15,11 @@ class AccountResponseModel {
     return AccountResponseModel(
       isSuccess: data["isSuccess"] ?? false,
       msg: data["msg"] ?? "",
-      accounts: (data["account"] as List<dynamic>)
+      accounts: (data["account"] is List)
+          ? (data["account"] as List)
           .map((json) => Account.fromJson(json))
-          .toList(),
+          .toList()
+          : [], // Return an empty list if "account" is null or not a list
     );
   }
 }

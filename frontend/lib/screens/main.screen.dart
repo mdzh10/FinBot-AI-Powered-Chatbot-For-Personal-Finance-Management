@@ -1,3 +1,4 @@
+import 'package:finbot/screens/chatbot/chatbot_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -9,12 +10,12 @@ import 'home/home.screen.dart';
 import 'more/more_screen.dart';
 import 'onboard/onboard_screen.dart';
 import 'dart:async';
+
 class MainScreen extends StatefulWidget{
   const MainScreen({super.key});
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
-
 
 
 class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
@@ -30,6 +31,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
   void _startGlowAnimation() {
     Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel(); // Ensure the timer stops if the widget is disposed
+        return;
+      }
       setState(() {
         _isGlorious = !_isGlorious; // Toggle glow effect every second
       });
@@ -44,7 +49,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         if (cubit.state.accessToken == null) {
           return OnboardScreen();
         } else {
-          print("cubit userId : " + cubit.state.userId.toString());
+          // print("cubit userId : " + cubit.state.userId.toString());
         }
         return Scaffold(
           body: PageView(
@@ -53,6 +58,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             children: [
               HomeScreen(cubit.state.userId),
               AccountsScreen(cubit.state.userId),
+              ChatPage(cubit.state.userId),
               CategoriesScreen(cubit.state.userId),
               MoreScreen(cubit.state.userId)
             ],
@@ -91,7 +97,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     height: 24,
                   ),
                 ),
-                label: "Chatbot",
+                label: "Finbot",
               ),
 
               const NavigationDestination(icon: Icon(Symbols.category, fill: 1,), label: "Categories"),

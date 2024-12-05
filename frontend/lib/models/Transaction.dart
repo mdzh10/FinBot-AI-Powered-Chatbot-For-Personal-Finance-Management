@@ -34,25 +34,26 @@ extension TransactionTypeExtension on TransactionType {
   }
 }
 
-
 class Transaction {
-  final int id;
-  final Account account; // Assuming you already have an Account class
-  final int userId;
-  final Category category; // Assuming you already have a Category class
-  final String title;
-  final String description;
-  final double amount;
-  final TransactionType type;
-  final DateTime datetime;
+  final int? id;
+  final Account? account;
+  final int? userId;
+  final Category? category;
+  final String? title;
+  final String? description;
+  bool? isExceed;
+  final double? amount;
+  final TransactionType? type;
+  final DateTime? datetime;
 
   Transaction({
-    required this.id,
+    this.id,
     required this.account,
     required this.userId,
     required this.category,
     required this.title,
     required this.description,
+    this.isExceed,
     required this.amount,
     required this.type,
     required this.datetime,
@@ -62,14 +63,34 @@ class Transaction {
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
       id: json['id'],
-      account: Account.fromJson(json['account']), // Assuming your Account class has fromJson
+      account: json['account'] != null ? Account.fromJson(json['account']) : null,
       userId: json['user_id'],
-      category: Category.fromJson(json['category']), // Assuming your Category class has fromJson
+      category: json['category'] != null ? Category.fromJson(json['category']) : null,
       title: json['title'],
       description: json['description'],
-      amount: json['amount'].toDouble(),
-      type: TransactionTypeExtension.fromString(json["type"]),
-      datetime: DateTime.parse(json['datetime']),
+      isExceed: json['isExceed'],
+      amount: (json['amount'] as num?)?.toDouble(),
+      type: json['type'] != null ? TransactionTypeExtension.fromString(json['type']) : null,
+      datetime: json['datetime'] != null ? DateTime.parse(json['datetime']) : DateTime.now(),
     );
   }
+
+
+  // Convert a Transaction to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'account': account?.toJson(),
+      'user_id': userId,
+      'category': category?.toJson(),
+      'title': title,
+      'description': description,
+      'amount': amount,
+      'type': type?.toJson(),
+      'datetime': datetime?.toIso8601String(),
+      // 'isExceed' is excluded here
+    };
+  }
+
 }
+

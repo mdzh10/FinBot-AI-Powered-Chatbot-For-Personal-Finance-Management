@@ -25,16 +25,24 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   String? _message;
 
- 
+  // Helper function to validate email format
+  bool isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@"
+      r"[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$",
+    );
+    return emailRegex.hasMatch(email);
+  }
 
   // Function to handle signup
-  Future<void> signUp(String email, String password, String userName, String phoneNumber) async {
+  Future<void> signUp(
+      String email, String password, String userName, String phoneNumber) async {
     setState(() {
       _isLoading = true;
       _message = null;
     });
 
-    const url = 'http://192.168.224.192:8000/auth/signup';
+    const url = 'https://finbot-fastapi-rc4376baha-ue.a.run.app/auth/signup';
 
     try {
       final response = await http.post(
@@ -72,13 +80,19 @@ class _RegisterPageState extends State<RegisterPage> {
                 : Row(
               children: [
                 signupResponse.isSuccess
-                    ? Icon(Icons.check_circle_outline, color: Colors.green, size: 40)
-                    : Icon(Icons.close, color: Colors.redAccent, size: 40),
-
+                    ? Icon(Icons.check_circle_outline,
+                    color: Colors.green, size: 40)
+                    : Icon(Icons.close,
+                    color: Colors.redAccent, size: 40),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
-                  child: Text(signupResponse.isSuccess ? "Success" : "Error",
-                    style: TextStyle(color: signupResponse.isSuccess ? Colors.green : Colors.redAccent),),
+                  child: Text(
+                    signupResponse.isSuccess ? "Success" : "Error",
+                    style: TextStyle(
+                        color: signupResponse.isSuccess
+                            ? Colors.green
+                            : Colors.redAccent),
+                  ),
                 )
               ],
             ),
@@ -86,13 +100,15 @@ class _RegisterPageState extends State<RegisterPage> {
               mainAxisAlignment: MainAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(signupResponse.msg, style: TextStyle(fontSize: 20)),
+                Text(signupResponse.msg,
+                    style: TextStyle(fontSize: 20)),
                 if (!signupResponse.isSuccess) // Show this message only if not successful
                   Padding(
                     padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
                     child: Text(
                       "Please try a different email.",
-                      style: TextStyle(fontSize: 16, color: Colors.red), // Red color for error
+                      style:
+                      TextStyle(fontSize: 16, color: Colors.red),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -104,18 +120,21 @@ class _RegisterPageState extends State<RegisterPage> {
                 color: theme.colorScheme.inversePrimary,
                 isFullWidth: true,
                 onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => SigninPage()),
+                    MaterialPageRoute(
+                        builder: (context) => SigninPage()),
                   );
                 },
                 size: AppButtonSize.large,
                 label: "Login",
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                labelStyle:
+                const TextStyle(fontWeight: FontWeight.bold),
               )
                   : TextButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.of(context).pop(); // Close the dialog
                 },
                 child: Text("Cancel"),
               )
@@ -128,6 +147,23 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() {
         _message = 'Failed to connect to the server';
       });
+
+      // Show error popup
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Connection Error"),
+          content: Text("Failed to connect to the server. Please try again later."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
     } finally {
       setState(() {
         _isLoading = false; // Reset loading state
@@ -135,6 +171,15 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  @override
+  void dispose() {
+    // Dispose controllers when the widget is removed from the widget tree
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -143,11 +188,13 @@ class _RegisterPageState extends State<RegisterPage> {
         backgroundColor: aBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios,color: Colors.white,),
-          onPressed: (){
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+          ),
+          onPressed: () {
             Navigator.pop(context);
           },
-
         ),
       ),
       body: SafeArea(
@@ -203,7 +250,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         ],
                       ),
                     ),
-                    // SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -215,7 +261,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => SigninPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => SigninPage()),
                             );
                           },
                           child: Text(
@@ -230,16 +277,71 @@ class _RegisterPageState extends State<RegisterPage> {
                     SizedBox(
                       height: 20,
                     ),
-                    // Spacer(),
+                    // Register Button with Validation
                     MyTextButton(
                       buttonName: 'Register',
                       onTap: () {
-                        signUp(_emailController.text, _passwordController.text, _nameController.text, _phoneController.text);
+                        // Trim the input to remove unnecessary whitespace
+                        String name = _nameController.text.trim();
+                        String email = _emailController.text.trim();
+                        String phone = _phoneController.text.trim();
+                        String password = _passwordController.text.trim();
+
+                        // List to hold names of empty fields
+                        List<String> emptyFields = [];
+
+                        if (name.isEmpty) emptyFields.add("Name");
+                        if (email.isEmpty) emptyFields.add("Email");
+                        if (phone.isEmpty) emptyFields.add("Phone");
+                        if (password.isEmpty) emptyFields.add("Password");
+
+                        if (emptyFields.isNotEmpty) {
+                          // Create a message listing all empty fields
+                          String message = "Please fill in the following fields:\n" +
+                              emptyFields.join(", ");
+
+                          // Show popup dialog
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text("Missing Information"),
+                              content: Text(message),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(); // Close the dialog
+                                  },
+                                  child: Text("OK"),
+                                ),
+                              ],
+                            ),
+                          );
+                        } else if (!isValidEmail(email)) {
+                          // Show invalid email popup dialog
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text("Invalid Email"),
+                              content: Text("Please enter a valid email address."),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(); // Close the dialog
+                                  },
+                                  child: Text("OK"),
+                                ),
+                              ],
+                            ),
+                          );
+                        } else {
+                          // All validations passed, proceed to sign up
+                          signUp(email, password, name, phone);
+                        }
                       },
                       bgColor: Colors.white,
                       textColor: Colors.black87,
                     ),
-                    SizedBox(height:40),
+                    SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -248,5 +350,13 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
+  }
+}
+
+// Extension method to capitalize first letter
+extension StringExtension on String {
+  String capitalize() {
+    if (this.isEmpty) return this;
+    return this[0].toUpperCase() + this.substring(1);
   }
 }

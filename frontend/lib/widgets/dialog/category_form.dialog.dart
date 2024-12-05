@@ -11,9 +11,10 @@ typedef Callback = void Function();
 class CategoryForm extends StatefulWidget {
   final Category? category;
   final Callback? onSave;
+  final Callback? onDelete;
   final int? userId;
 
-  const CategoryForm({super.key, this.category, this.onSave, this.userId});
+  const CategoryForm({super.key, this.category, this.onSave, this.onDelete, this.userId});
 
   @override
   State<StatefulWidget> createState() => _CategoryForm();
@@ -51,8 +52,8 @@ class _CategoryForm extends State<CategoryForm> {
 
     try {
       final url = _category?.id == null
-          ? Uri.parse('http://192.168.224.192:8000/category/create')
-          : Uri.parse('http://192.168.224.192:8000/category/update');
+          ? Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/category/create')
+          : Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/category/update');
 
       final response = _category?.id == null
           ? await http.post(
@@ -72,6 +73,35 @@ class _CategoryForm extends State<CategoryForm> {
         Navigator.pop(context);
       } else {
         print("Failed to save category: ${response.body}");
+        throw Exception("Failed to save category");
+      }
+    } catch (e) {
+      print("Error: $e");
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+  void onDelete(context, int categoryId) async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/category/delete/' + categoryId.toString());
+
+      final response = await http.delete(
+        url,
+        headers: {"Content-Type": "application/json"}
+      );
+
+      if (response.statusCode == 200) {
+        print("Category deleted successfully: ${jsonDecode(response.body)}");
+        widget.onDelete?.call(); // Trigger callback to refresh data
+        Navigator.pop(context);
+      } else {
+        print("Failed to delete category: ${response.body}");
         throw Exception("Failed to save category");
       }
     } catch (e) {
@@ -167,8 +197,8 @@ class _CategoryForm extends State<CategoryForm> {
         ),
       ),
       actions: [
-        Stack(
-          alignment: Alignment.center,
+        Column(
+          // alignment: Alignment.center,
           children: [
             AppButton(
               height: 45,
@@ -187,6 +217,21 @@ class _CategoryForm extends State<CategoryForm> {
                   color: Colors.white,
                 ),
               ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+              child: AppButton(
+                height: 45,
+                isFullWidth: true,
+                onPressed: _isSaving
+                    ? null // Disable button when saving
+                    : () {
+                  onDelete(context, _category?.id ?? 0);
+                },
+                color: Colors.red,
+                label: "Delete",
+              ),
+            ),
           ],
         ),
       ],

@@ -24,13 +24,23 @@ class _SigninPageState extends State<SigninPage> {
   bool _isLoading = false;
   String? _message;
 
+  // Helper function to validate email format
+  bool isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@"
+      r"[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$",
+    );
+    return emailRegex.hasMatch(email);
+  }
+
+  // Function to handle login
   Future<void> login(String email, String password) async {
     setState(() {
       _isLoading = true;
       _message = null;
     });
 
-    const url = 'http://192.168.224.192:8000/auth/login';  // Replace with your deployed API URL
+    const url = 'https://finbot-fastapi-rc4376baha-ue.a.run.app/auth/login'; // Replace with your deployed API URL
 
     try {
       final response = await http.post(
@@ -47,72 +57,117 @@ class _SigninPageState extends State<SigninPage> {
       print("Response Status: ${response.statusCode}");
       print("Response Body: ${response.body}");
 
-
       final responseData = json.decode(response.body);
       final loginResponse = LoginResponse.fromJson(responseData);
       ThemeData theme = Theme.of(context);
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            AppCubit cubit = context.read<AppCubit>();
-            return AlertDialog(
-              title: _isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : Row(
-                children: [
-                  loginResponse.isSuccess
-                      ? Icon(Icons.check_circle_outline, color: Colors.green, size: 40)
-                      : Icon(Icons.close, color: Colors.redAccent, size: 40),
+      AppCubit cubit = context.read<AppCubit>();
 
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
-                        child: Text(loginResponse.isSuccess ? "Success" : "Error",
-                          style: TextStyle(color: loginResponse.isSuccess ? Colors.green : Colors.redAccent),),
-                      )
-                ],
-              ),
-              content: Text(loginResponse.msg, style: TextStyle(fontSize: 20)),
-              actions: <Widget>[
+      // Update message based on the response
+      setState(() {
+        _message = loginResponse.msg; // This will show message in your UI
+      });
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : Row(
+              children: [
                 loginResponse.isSuccess
-                    ? AppButton(
-                  color: theme.colorScheme.inversePrimary,
-                  isFullWidth: true,
-                  onPressed: () {
-                    print(loginResponse.accessToken);
-                    cubit.updateAccessToken(loginResponse.accessToken);
-                    cubit.updateUserDetails(loginResponse.userName, loginResponse.userId);
-                    setState(() {
-                      _message = loginResponse.msg;
-                    });
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => MainScreen()), // need to change
-                    );
-                  },
-                  size: AppButtonSize.large,
-                  label: "Ok",
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                )
-                    : TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text("Cancel"),
+                    ? Icon(Icons.check_circle_outline,
+                    color: Colors.green, size: 40)
+                    : Icon(Icons.close,
+                    color: Colors.redAccent, size: 40),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
+                  child: Text(
+                    loginResponse.isSuccess ? "Success" : "Error",
+                    style: TextStyle(
+                        color: loginResponse.isSuccess
+                            ? Colors.green
+                            : Colors.redAccent),
+                  ),
                 )
               ],
-            );
-          },
-        );
+            ),
+            content: Text(
+              loginResponse.msg,
+              style: TextStyle(fontSize: 20),
+            ),
+            actions: <Widget>[
+              loginResponse.isSuccess
+                  ? AppButton(
+                color: theme.colorScheme.inversePrimary,
+                isFullWidth: true,
+                onPressed: () {
+                  print(loginResponse.accessToken);
+                  cubit.updateAccessToken(loginResponse.accessToken);
+                  cubit.updateUserDetails(
+                      loginResponse.userName, loginResponse.userId);
+                  setState(() {
+                    _message = loginResponse.msg;
+                  });
+                  Navigator.of(context).pop(); // Close the dialog
+
+                  // Navigate to MainScreen and remove all previous routes
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                        builder: (context) => MainScreen()),
+                        (Route<dynamic> route) => false,
+                  );
+                },
+                size: AppButtonSize.large,
+                label: "Ok",
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+              )
+                  : TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: Text("Cancel"),
+              )
+            ],
+          );
+        },
+      );
     } catch (error) {
+      print("Error: $error"); // Log the error for debugging
       setState(() {
         _message = 'Failed to connect to the server';
       });
+
+      // Show error popup
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Connection Error"),
+          content: Text("Failed to connect to the server. Please try again later."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
     } finally {
       setState(() {
-        _isLoading = false; // Reset loading state after handling
+        _isLoading = false; // Reset loading state
       });
     }
+  }
+
+  @override
+  void dispose() {
+    // Dispose controllers when the widget is removed from the widget tree
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -147,7 +202,10 @@ class _SigninPageState extends State<SigninPage> {
                 SizedBox(height: 10.0),
                 Align(
                   alignment: Alignment.topLeft,
-                  child: Text("Welcome back.\nYou've been missed!", style: aBodyText2),
+                  child: Text(
+                    "Welcome back.\nYou've been missed!",
+                    style: aBodyText2,
+                  ),
                 ),
                 SizedBox(height: 50.0),
                 Padding(
@@ -155,7 +213,7 @@ class _SigninPageState extends State<SigninPage> {
                   child: TextField(
                     controller: _emailController,
                     style: aBodyText.copyWith(color: Colors.white),
-                    keyboardType: TextInputType.text,
+                    keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       contentPadding: EdgeInsets.all(20),
@@ -188,21 +246,25 @@ class _SigninPageState extends State<SigninPage> {
                         passwordVisibility = !passwordVisibility;
                       });
                     },
-                  )
+                  ),
                 ),
-                SizedBox(height: 230),
+                SizedBox(height: 30),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text("Don't have an account?", style: aBodyText),
                     InkWell(
-                      onTap: (){
+                      onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => RegisterPage()), // need to change
+                          MaterialPageRoute(builder: (context) => RegisterPage()),
                         );
                       },
-                        child: Text(" Register", style: aBodyText.copyWith(color: Colors.white))),
+                      child: Text(
+                        " Register",
+                        style: aBodyText.copyWith(color: Colors.white),
+                      ),
+                    ),
                   ],
                 ),
                 Padding(
@@ -210,7 +272,58 @@ class _SigninPageState extends State<SigninPage> {
                   child: MyTextButton(
                     buttonName: "Sign In",
                     onTap: () {
-                      login(_emailController.text, _passwordController.text);
+                      // Trim the input to remove unnecessary whitespace
+                      String email = _emailController.text.trim();
+                      String password = _passwordController.text.trim();
+
+                      // List to hold names of empty fields
+                      List<String> emptyFields = [];
+
+                      if (email.isEmpty) emptyFields.add("Email");
+                      if (password.isEmpty) emptyFields.add("Password");
+
+                      if (emptyFields.isNotEmpty) {
+                        // Create a message listing all empty fields
+                        String message = "Please fill in the following fields:\n" +
+                            emptyFields.join(", ");
+
+                        // Show popup dialog
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text("Missing Information"),
+                            content: Text(message),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop(); // Close the dialog
+                                },
+                                child: Text("OK"),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (!isValidEmail(email)) {
+                        // Show invalid email popup dialog
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text("Invalid Email"),
+                            content: Text("Please enter a valid email address."),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop(); // Close the dialog
+                                },
+                                child: Text("OK"),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        // All validations passed, proceed to login
+                        login(email, password);
+                      }
                     },
                     bgColor: Colors.white,
                     textColor: Colors.black87,
@@ -222,5 +335,13 @@ class _SigninPageState extends State<SigninPage> {
         ),
       ),
     );
+  }
+}
+
+// Extension method to capitalize first letter
+extension StringExtension on String {
+  String capitalize() {
+    if (this.isEmpty) return this;
+    return this[0].toUpperCase() + this.substring(1);
   }
 }

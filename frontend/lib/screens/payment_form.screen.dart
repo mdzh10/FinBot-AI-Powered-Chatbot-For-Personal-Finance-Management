@@ -1,6 +1,10 @@
-import 'package:events_emitter/listener.dart';
-import 'package:finbot/models/Transaction.dart';
+import 'dart:convert';
 
+import 'package:events_emitter/listener.dart';
+import 'package:finbot/models/AccountResponseModel.dart';
+import 'package:finbot/models/CategoryResponseModel.dart';
+import 'package:finbot/models/Transaction.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -17,7 +21,7 @@ import '../widgets/dialog/confirm.modal.dart';
 typedef OnCloseCallback = Function(Transaction transaction);
 final DateFormat formatter = DateFormat('dd/MM/yyyy hh:mm a');
 class PaymentForm extends StatefulWidget{
-  final TransactionType  type;
+  final TransactionType? type;
   final Transaction? transaction;
   final OnCloseCallback? onClose;
   final int? userId;
@@ -30,40 +34,77 @@ class PaymentForm extends StatefulWidget{
 
 class _PaymentForm extends State<PaymentForm>{
   bool _initialised = false;
-  // final PaymentDao _paymentDao = PaymentDao();
-  // final AccountDao _accountDao = AccountDao();
-  // final CategoryDao _categoryDao = CategoryDao();
+  bool _isLoading = false;
+
 
   EventListener? _accountEventListener;
   EventListener? _categoryEventListener;
+  AccountResponseModel? accountResponseModel;
+  CategoryResponse? categoryResponse;
 
   List<Account> _accounts = [];
   List<Category> _categories = [];
 
   //values
   int? _id;
-  String _title = "";
-  String _description="";
+  String? _title = "";
+  String? _description="";
   Account? _account;
   Category? _category;
-  double _amount=0;
-  TransactionType _type= TransactionType.credit;
-  DateTime _datetime = DateTime.now();
+  bool? _isExceed;
+  double? _amount=0;
+  TransactionType? _type;
+  DateTime? _datetime = DateTime.now();
 
-  loadAccounts(){
-    // _accountDao.find().then((value){
-    //   setState(() {
-    //     _accounts = value;
-    //   });
-    // });
+  loadAccounts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/account/" + widget.userId.toString();
+    final response = await http.get(
+      Uri.parse(apiUrl),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      accountResponseModel = AccountResponseModel.fromJson(data);
+    } else {
+      throw Exception('Failed to load accounts');
+    }
+
+    List<Account>? accounts = accountResponseModel?.accounts;
+
+    setState(() {
+      _accounts = accounts ?? [];
+      _isLoading = false;
+    });
+
   }
 
-  loadCategories(){
-    // _categoryDao.find().then((value){
-    //   setState(() {
-    //     _categories = value;
-    //   });
-    // });
+  loadCategories() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final String apiUrl = "https://finbot-fastapi-rc4376baha-ue.a.run.app/category/" + widget.userId.toString();
+    final response = await http.get(
+      Uri.parse(apiUrl),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      categoryResponse = CategoryResponse.fromJson(data);
+    } else {
+      throw Exception('Failed to load categories');
+    }
+
+    setState(() {
+      _categories = categoryResponse?.categories ?? [];
+      _isLoading = false;
+    });
   }
 
   void populateState() async{
@@ -93,7 +134,7 @@ class _PaymentForm extends State<PaymentForm>{
   }
 
   Future<void> chooseDate(BuildContext context) async {
-    DateTime initialDate = _datetime;
+    DateTime? initialDate = _datetime;
     final DateTime? picked = await showDatePicker(
         context: context,
         initialDate: initialDate,
@@ -106,16 +147,16 @@ class _PaymentForm extends State<PaymentForm>{
             picked.year,
             picked.month,
             picked.day,
-            initialDate.hour,
-            initialDate.minute
+            initialDate!.hour,
+            initialDate!.minute
         );
       });
     }
   }
 
   Future<void> chooseTime(BuildContext context) async {
-    DateTime initialDate = _datetime;
-    TimeOfDay initialTime = TimeOfDay(hour: initialDate.hour, minute: initialDate.minute);
+    DateTime? initialDate = _datetime;
+    TimeOfDay initialTime = TimeOfDay(hour: initialDate!.hour, minute: initialDate.minute);
     final TimeOfDay? time = await showTimePicker(
         context: context,
         initialTime: initialTime,
@@ -134,23 +175,196 @@ class _PaymentForm extends State<PaymentForm>{
     }
   }
 
-  void handleSaveTransaction(context) async{
-    Transaction transaction = Transaction(id: _id ?? 0,
-        account: _account!,
-        category: _category!,
-        amount: _amount,
-        type: _type,
-        datetime: _datetime,
-        title: _title,
-        description: _description,
-        userId: widget.userId ?? 0
+  void handleSaveTransaction(BuildContext context) async {
+    Transaction transaction = Transaction(
+      id: _id,
+      account: _account,
+      category: _category,
+      amount: _amount,
+      type: _type,
+      datetime: _datetime,
+      title: _title,
+      description: _description,
+      userId: widget.userId ?? 0,
     );
-    // await _paymentDao.upsert(transaction);
+
+    // If the transaction is new (id is null), make a POST request
+    if (transaction.id == null) {
+      final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/add');
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+
+      final body = jsonEncode([{
+        "user_id": widget.userId,
+        "account_id": _account?.id,
+        "category_id": _category?.id,
+        "title": _title,
+        "description": _description,
+        "amount": _amount,
+        "type": _type?.toJson(),
+        "datetime": _datetime?.toIso8601String(),
+        // "isExceed": false,
+      }]);
+
+      print("Request Body: $body");
+
+      try {
+        final response = await http.post(url, headers: headers, body: body);
+
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+
+          if (responseData['isSuccess']) {
+            print("Transaction added successfully!");
+            final List<dynamic> transactionsJson = responseData['transactions'];
+            final List<Transaction> transactions = transactionsJson
+                .map((transactionJson) => Transaction.fromJson(transactionJson))
+                .toList();
+
+            // Filter transactions where isExceed is true
+            final List<Transaction> exceedTransactions = transactions
+                .where((transaction) => transaction.isExceed == true)
+                .toList();
+
+            // If any transactions are exceeding, show the warning pop-up
+            if (exceedTransactions.isNotEmpty) {
+              String categoryNames = exceedTransactions
+                  .map((transaction) => transaction.category?.name ?? 'Unknown')
+                  .join(', ');
+
+              // Show warning pop-up with category names
+              showWarningDialog(context, categoryNames);
+            } else {
+              print("No exceeding transactions found.");
+            }
+          } else {
+            print("Failed to add transaction: ${responseData['msg']}");
+          }
+        } else {
+          print("Error: ${response.statusCode}");
+          print("Response Body: ${response.body}");
+        }
+      } catch (e) {
+        print("Exception occurred: $e");
+      }
+    } else {
+      // Modify existing transaction
+      final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/modify');
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+
+      final body = jsonEncode({
+        "id": transaction.id,
+        "user_id": widget.userId,
+        "account_id": _account?.id,
+        "category_id": _category?.id,
+        "title": _title,
+        "description": _description,
+        "amount": _amount,
+        "type": _type?.toJson(),
+        "datetime": _datetime?.toIso8601String(),
+      });
+
+      try {
+        final response = await http.put(url, headers: headers, body: body);
+
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+
+          if (responseData['isSuccess']) {
+            print("Transaction modified successfully!");
+            final List<dynamic> transactionsJson = responseData['transactions'];
+            final List<Transaction> transactions = transactionsJson
+                .map((transactionJson) => Transaction.fromJson(transactionJson))
+                .toList();
+
+            // Filter transactions where isExceed is true
+            final List<Transaction> exceedTransactions = transactions
+                .where((transaction) => transaction.isExceed == true)
+                .toList();
+
+            // If any transactions are exceeding, show the warning pop-up
+            if (exceedTransactions.isNotEmpty) {
+              String categoryNames = exceedTransactions
+                  .map((transaction) => transaction.category?.name ?? 'Unknown')
+                  .join(', ');
+
+              // Show warning pop-up with category names
+              showWarningDialog(context, categoryNames);
+            } else {
+              print("No exceeding transactions found.");
+            }
+          } else {
+            print("Failed to modify transaction: ${responseData['msg']}");
+          }
+        } else {
+          print("Error: ${response.statusCode}");
+          print("Response Body: ${response.body}");
+        }
+      } catch (e) {
+        print("Exception occurred: $e");
+      }
+    }
+
+    // Close the transaction screen after saving or modifying the transaction
     if (widget.onClose != null) {
       widget.onClose!(transaction);
     }
-    Navigator.of(context).pop();
-    // globalEvent.emit("payment_update");
+    Navigator.of(context).pop(true);
+  }
+
+// Function to show a warning dialog with the category names
+  Future<void> showWarningDialog(BuildContext context, String categoryNames) async {
+    await Future.delayed(Duration(milliseconds: 100)); // Add delay to allow UI to settle
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Warning"),
+            content: Text("The following categories have exceeded the limit: $categoryNames"),
+            actions: <Widget>[
+              TextButton(
+                child: Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+
+
+  Future<void> deleteTransaction(int transactionId) async {
+    final url = Uri.parse('https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/delete/$transactionId'); // Replace with the actual endpoint URL
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json', // Ensure the correct content type is set
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('Transaction deleted successfully: ${response.body}');
+        Navigator.of(context).pop(true);
+      } else if (response.statusCode == 422) {
+        print('Validation Error: ${response.body}');
+      } else {
+        print('Failed to delete transaction: ${response.statusCode}, ${response.body}');
+      }
+    } catch (error) {
+      print('Error occurred: $error');
+    }
   }
 
 
@@ -158,20 +372,10 @@ class _PaymentForm extends State<PaymentForm>{
   void initState()  {
     super.initState();
     populateState();
-    // _accountEventListener = globalEvent.on("account_update", (data){
-    //   debugPrint("accounts are changed");
-    //   loadAccounts();
-    // });
-    //
-    // _categoryEventListener = globalEvent.on("category_update", (data){
-    //   debugPrint("categories are changed");
-    //   loadCategories();
-    // });
   }
 
   @override
   void dispose() {
-
     _accountEventListener?.cancel();
     _categoryEventListener?.cancel();
 
@@ -180,7 +384,9 @@ class _PaymentForm extends State<PaymentForm>{
 
   @override
   Widget build(BuildContext context) {
-    if(!_initialised) return const CircularProgressIndicator();
+    if(!_initialised) return Center(
+      child: CircularProgressIndicator(),
+    ) ;
 
     return
       Scaffold(
@@ -191,11 +397,9 @@ class _PaymentForm extends State<PaymentForm>{
                   onPressed: (){
                     ConfirmModal.showConfirmDialog(context, title: "Are you sure?", content: const Text("After deleting payment can't be recovered."),
                         onConfirm: (){
-                          // _paymentDao.deleteTransaction(_id!).then((value) {
-                          //   // globalEvent.emit("payment_update");
-                          //   Navigator.pop(context);
-                          //   Navigator.pop(context);
-                          // });
+                          deleteTransaction(_id!).then((value) {
+                            Navigator.pop(context, true);
+                          });
                         },
                         onCancel: (){
                           Navigator.pop(context);
@@ -322,7 +526,7 @@ class _PaymentForm extends State<PaymentForm>{
                                               spacing: 10,
                                               children: [
                                                 Icon(Icons.calendar_today, size: 18, color: Theme.of(context).colorScheme.primary,),
-                                                Text(DateFormat("dd/MM/yyyy").format(_datetime))
+                                                Text(DateFormat("dd/MM/yyyy").format(_datetime ?? DateTime.now()))
                                               ],
                                             )
                                         )
@@ -337,7 +541,7 @@ class _PaymentForm extends State<PaymentForm>{
                                               spacing: 10,
                                               children: [
                                                 Icon(Icons.watch_later_outlined, size: 18, color: Theme.of(context).colorScheme.primary,),
-                                                Text(DateFormat("hh:mm a").format(_datetime))
+                                                Text(DateFormat("hh:mm a").format(_datetime ?? DateTime.now()))
                                               ],
                                             )
                                         )
@@ -379,7 +583,10 @@ class _PaymentForm extends State<PaymentForm>{
                                           highlightElevation: 0,
                                           disabledElevation: 0,
                                           onPressed: (){
-                                            showDialog(context: context, builder: (builder)=>const AccountForm());
+                                            showDialog(context: context, builder: (builder)=> AccountForm(userId: widget.userId,
+                                              onSave: () {
+                                                loadAccounts(); // Refresh accounts list after saving
+                                              },));
                                           },
                                           child:  SizedBox(
                                             width: double.infinity,
@@ -491,7 +698,10 @@ class _PaymentForm extends State<PaymentForm>{
                                                 highlightElevation: 0,
                                                 disabledElevation: 0,
                                                 onPressed: (){
-                                                  showDialog(context: context, builder: (builder)=> const CategoryForm());
+                                                  showDialog(context: context, builder: (builder)=> CategoryForm(userId: widget.userId,
+                                                    onSave: () {
+                                                      loadCategories(); // Refresh accounts list after saving
+                                                    },));
                                                 },
                                                 child:  SizedBox(
                                                   width: double.infinity,
@@ -565,8 +775,10 @@ class _PaymentForm extends State<PaymentForm>{
                   height: 50,
                   labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   isFullWidth: true,
-                  onPressed: _amount > 0 && _account!=null && _category!=null ? (){
-                    handleSaveTransaction(context);
+                  onPressed: _amount! > 0 && _account!=null  ? (){
+                    if(_category!=null) {
+                      handleSaveTransaction(context);
+                    }
                   } : null,
                   color: Theme.of(context).colorScheme.primary,
                 ),

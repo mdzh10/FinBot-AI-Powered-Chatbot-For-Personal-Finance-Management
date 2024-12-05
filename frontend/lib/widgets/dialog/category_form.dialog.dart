@@ -187,6 +187,17 @@ class _CategoryForm extends State<CategoryForm> {
                   color: Colors.white,
                 ),
               ),
+            AppButton(
+              height: 45,
+              isFullWidth: true,
+              onPressed: _isSaving
+                  ? null // Disable button when saving
+                  : () {
+                onSave(context);
+              },
+              color: Theme.of(context).colorScheme.primary,
+              label: "Save",
+            ),
           ],
         ),
       ],

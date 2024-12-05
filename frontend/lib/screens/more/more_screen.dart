@@ -2,20 +2,22 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:currency_picker/currency_picker.dart';
+import 'package:finbot/models/Transaction.dart';
 import 'package:finbot/screens/main.screen.dart';
 import 'package:finbot/screens/more/CaptureReceiptImage.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:intl/intl.dart';
 import '../../bloc/cubit/app_cubit.dart';
 import '../../helpers/color.helper.dart';
 import '../../helpers/db.helper.dart';
-import '../../models/Account.dart';
-import '../../models/category.model.dart';
 import '../../widgets/buttons/button.dart';
 import '../../widgets/dialog/confirm.modal.dart';
 import '../../widgets/dialog/loading_dialog.dart';
@@ -35,44 +37,6 @@ class _MoreScreenState extends State<MoreScreen> {
     super.initState();
   }
 
-  // Modified getExternalDocumentPath function
-  Future<String?> getExternalDocumentPath() async {
-    // Request storage permissions
-    bool permissionGranted = await _requestPermissions();
-    if (!permissionGranted) {
-      // Handle the case when permission is not granted
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Storage permission is required to export data.")),
-      );
-      return null;
-    }
-
-    Directory? directory;
-    if (Platform.isAndroid) {
-      // Retrieve the Downloads directory
-      List<Directory>? dirs =
-      await getExternalStorageDirectories(type: StorageDirectory.downloads);
-      if (dirs != null && dirs.isNotEmpty) {
-        directory = dirs.first;
-      } else {
-        // Fallback to a default path if the Downloads directory is not found
-        directory = Directory("/storage/emulated/0/Download");
-      }
-    } else {
-      // For iOS, use the application documents directory
-      directory = await getApplicationDocumentsDirectory();
-    }
-
-    if (directory != null) {
-      // Ensure the directory exists
-      await directory.create(recursive: true);
-      return directory.path;
-    }
-
-    return null;
-  }
-
-  // Helper function to request storage permissions
   Future<bool> _requestPermissions() async {
     var status = await Permission.storage.status;
     if (!status.isGranted) {
@@ -81,30 +45,142 @@ class _MoreScreenState extends State<MoreScreen> {
     return status.isGranted;
   }
 
-  // Modified export function
   Future<String?> export(int userId) async {
     try {
-      List<Account> accounts = await loadAccount(userId);
-      List<Category> categories = await loadCategory(userId);
-
-      Map<String, dynamic> data = {
-        "accounts": accounts.map((e) => e.toJson()).toList(),
-        "categories": categories.map((e) => e.toJson()).toList(),
-        // Add other data as needed
-      };
-
-      final path = await getExternalDocumentPath();
-      if (path == null) {
-        throw Exception("Storage permission not granted or path not found.");
+      bool permissionGranted = await _requestPermissions();
+      if (!permissionGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Storage permission is required to export data.")),
+        );
+        return null;
       }
+      List<Transaction> transactions = await fetchTransactions(userId);
 
-      String name = "finbot-backup-${DateTime.now().millisecondsSinceEpoch}.json";
-      File file = File('$path/$name');
-      await file.writeAsString(jsonEncode(data));
-      return file.path;
+      // Generate the PDF document
+      final pdf = pw.Document();
+
+      // Add content to the PDF
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: pw.EdgeInsets.all(32),
+          footer: (pw.Context context) {
+            return pw.Container(
+              alignment: pw.Alignment.centerRight,
+              margin: pw.EdgeInsets.only(top: 1.0 * PdfPageFormat.cm),
+              child: pw.Text(
+                'Page ${context.pageNumber} of ${context.pagesCount}',
+                style: pw.TextStyle(color: PdfColors.grey),
+              ),
+            );
+          },
+          build: (pw.Context context) {
+            return [
+              pw.Header(
+                level: 0,
+                child: pw.Text('Bank Statement', style: pw.TextStyle(fontSize: 24)),
+              ),
+              pw.SizedBox(height: 20),
+              _buildTransactionTable(transactions),
+            ];
+          },
+        ),
+      );
+
+      String name = "bank_statement_${DateTime.now().millisecondsSinceEpoch}";
+      String path;
+
+
+      if (Platform.isAndroid) {
+
+          path = '/storage/emulated/0/Download/$name.pdf';
+          final file = File(path);
+          await file.writeAsBytes(await pdf.save());
+
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("PDF saved to Downloads folder.")),
+          );
+
+          // Optionally open the file
+          OpenFilex.open(path);
+
+          return path;
+        } else {
+        // For other platforms
+        final directory = await getApplicationDocumentsDirectory();
+        path = '${directory.path}/$name';
+        final file = File(path);
+        await file.writeAsBytes(await pdf.save());
+
+        // Notify the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("PDF saved at $path.")),
+        );
+
+        // Optionally open the file
+        OpenFilex.open(path);
+
+        return path;
+      }
     } catch (e) {
       throw Exception("Failed to export data: $e");
     }
+  }
+
+
+  pw.Widget _buildTransactionTable(List<Transaction> transactions) {
+    return pw.TableHelper.fromTextArray(
+      headers: [
+        'Date',
+        'Title',
+        'Description',
+        'Amount',
+        'Type',
+        'Account',
+        'Category',
+      ],
+      data: transactions.map((transaction) {
+        return [
+          transaction.datetime != null
+              ? DateFormat('yyyy-MM-dd').format(transaction.datetime!)
+              : '',
+          transaction.title ?? '',
+          transaction.description ?? '',
+          transaction.amount?.toStringAsFixed(2) ?? '',
+          transaction.type != null
+              ? transaction.type!.displayName
+              : '',
+          transaction.account != null
+              ? transaction.account!.accountName ?? ''
+              : '',
+          transaction.category != null
+              ? transaction.category!.name
+              : '',
+        ];
+      }).toList(),
+      headerStyle: pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 12,
+      ),
+      cellStyle: pw.TextStyle(
+        fontSize: 10,
+      ),
+      cellAlignment: pw.Alignment.centerLeft,
+      headerDecoration: pw.BoxDecoration(
+        color: PdfColors.grey300,
+      ),
+      cellHeight: 25,
+      columnWidths: {
+        0: pw.FixedColumnWidth(60),
+        1: pw.FixedColumnWidth(80),
+        2: pw.FixedColumnWidth(100),
+        3: pw.FixedColumnWidth(60),
+        4: pw.FixedColumnWidth(60),
+        5: pw.FixedColumnWidth(80),
+        6: pw.FixedColumnWidth(80),
+      },
+    );
   }
 
   @override

@@ -3,6 +3,8 @@ import "dart:io";
 import "package:finbot/models/Account.dart";
 import "package:finbot/models/AccountResponseModel.dart";
 import "package:finbot/models/CategoryResponseModel.dart";
+import "package:finbot/models/Transaction.dart";
+import "package:finbot/models/TransactionResponse.dart";
 import "package:finbot/models/category.model.dart";
 import 'package:http/http.dart' as http;
 import "package:path_provider/path_provider.dart";
@@ -49,31 +51,6 @@ Future<String?> getExternalDocumentPath(BuildContext context) async {
   return null;
 }
 
-Future<String> export(int userId, BuildContext context) async {
-  try {
-    List<Account> accounts = await loadAccount(userId);
-    List<Category> categories = await loadCategory(userId);
-
-    Map<String, dynamic> data = {
-      "accounts": accounts.map((e) => e.toJson()).toList(),
-      "categories": categories.map((e) => e.toJson()).toList(),
-      // Add other data as needed
-    };
-
-    final path = await getExternalDocumentPath(context);
-    if (path == null) {
-      throw Exception("Storage permission not granted or path not found.");
-    }
-
-    String name = "finbot-backup-${DateTime.now().millisecondsSinceEpoch}.json";
-    File file = File('$path/$name');
-    await file.writeAsString(jsonEncode(data));
-    return file.path;
-  } catch (e) {
-    throw Exception("Failed to export data: $e");
-  }
-}
-
 Future<List<Account>> loadAccount(int? userId) async {
   AccountResponseModel? accountResponseModel;
 
@@ -112,3 +89,26 @@ Future<List<Category>> loadCategory(int? userId) async {
   }
   return categoryResponse.categories;
 }
+
+Future<List<Transaction>> fetchTransactions(int? userId) async {
+  TransactionResponse? transactionResponse;
+  final uriTrans = Uri.parse("https://finbot-fastapi-rc4376baha-ue.a.run.app/transaction/$userId");
+  try {
+    final responseTrans = await http.get(uriTrans);
+    print('API URL: $uriTrans');
+    print('Response Status: ${responseTrans.statusCode}');
+    print('Response Body: ${responseTrans.body}');
+
+    if (responseTrans.statusCode == 200) {
+      final Map<String, dynamic> json = jsonDecode(responseTrans.body);
+       transactionResponse = TransactionResponse.fromJson(json);
+    } else {
+      print('Failed to load transactions: ${responseTrans.statusCode}');
+    }
+  } catch (e) {
+    print('Error: $e');
+  }
+  return transactionResponse?.transactions ?? [];
+}
+
+
